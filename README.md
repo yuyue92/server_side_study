@@ -32,3 +32,12 @@
 - 身份认证：Session / Cookie、 JWT（JSON Web Token）；
 - 权限控制：RBAC（基于角色的访问控制）；
 - 常见安全问题：XSS、CSRF、SQL 注入、 HTTPS 与证书；
+
+六、部署与运维：
+- 本地运行与环境变量（dotenv）；
+- 生产环境部署： （1）Linux 基础命令、（2）Nginx 反向代理、（3）Docker 容器化、（4）云平台（Vercel / Railway / 阿里云 / 腾讯云）；
+- 日志与监控（PM2、Grafana、Prometheus）；
+
+
+
+
