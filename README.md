@@ -27,3 +27,8 @@
 - 关系型数据库（SQL）：MySQL / PostgreSQL / SQLite； 基本操作：增删改查（CRUD）、表结构、索引；
 - 非关系型数据库（NoSQL）：MongoDB（文档型）；Redis（缓存、会话存储）；
 - 重点：SQL 语句、ORM 框架（Sequelize / Prisma / GORM）、 连接池与性能优化；
+
+五、认证与安全：
+- 身份认证：Session / Cookie、 JWT（JSON Web Token）；
+- 权限控制：RBAC（基于角色的访问控制）；
+- 常见安全问题：XSS、CSRF、SQL 注入、 HTTPS 与证书；
