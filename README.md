@@ -16,4 +16,9 @@
 
 3、学习服务端框架
 - Node.js：（1）Express.js（轻量，入门快）、（2）NestJS（结构化，适合中大型项目）
-- Go：（1）Gin（轻量高性能）、（2）Fiber（Express 风格，学习快）
+- Go：（1）Gin（轻量高性能）、（2）Fiber（Express 风格，学习快）；
+- 内容重点：
+   - 路由（Route）定义；
+   - 请求参数获取（Query、Body、Params）；
+   - 中间件（日志、鉴权、错误处理）
+   - 静态资源托管
