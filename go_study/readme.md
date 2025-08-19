@@ -62,4 +62,4 @@ func main() {
 ```
 👉 一样可以访问 http://localhost:8080/ping，效果与 Gin 类似。
 
-
+适用场景：前端/Node.js 转 Go 的开发者（语法风格接近 Express）。适合快速开发、小中型应用、API 服务。
