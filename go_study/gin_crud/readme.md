@@ -7,6 +7,7 @@
 go-users-crud/
 ├── main.go
 ├── go.mod
+├── bootstrap.min.css
 ├── index.html
 └── users.db (运行后自动生成)
 ```
