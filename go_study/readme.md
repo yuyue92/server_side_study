@@ -9,3 +9,24 @@ Gin 和 Fiber 都是 Go 语言中非常流行的 Web 框架，它们都主打 �
 - 简洁 API：封装了常用功能（路由、中间件、JSON 处理、表单绑定、验证等）。
 - 中间件机制：支持链式中间件，方便扩展。
 - 生态活跃：社区成熟，资料多，适合生产环境。
+
+代码示例：
+```
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+)
+
+func main() {
+    r := gin.Default()
+
+    r.GET("/ping", func(c *gin.Context) {
+        c.JSON(200, gin.H{
+            "message": "pong",
+        })
+    })
+
+    r.Run(":8080") // 启动服务
+}
+```
