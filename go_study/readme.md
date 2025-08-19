@@ -33,3 +33,33 @@ func main() {
 👉 打开浏览器访问 http://localhost:8080/ping，返回 {"message":"pong"}
 
 适用场景：有 Web 开发经验，想要高性能、功能全的框架。适合中大型项目、生产环境。
+
+二、Fiber：定位：受 Node.js Express.js 启发的 Go Web 框架，语法非常简洁，上手快。
+
+特点：
+- 语法类似 Express：对前端/Node.js 开发者很友好。
+- 高性能：基于 fasthttp（比 Go 内置 net/http 更快）。
+- 学习成本低：API 设计简洁，像写 Node.js Express。
+- 内置丰富功能：路由分组、静态文件服务、模板渲染、WebSocket 等。
+
+代码示例：
+```
+package main
+
+import "github.com/gofiber/fiber/v2"
+
+func main() {
+    app := fiber.New()
+
+    app.Get("/ping", func(c *fiber.Ctx) error {
+        return c.JSON(fiber.Map{
+            "message": "pong",
+        })
+    })
+
+    app.Listen(":8080")
+}
+```
+👉 一样可以访问 http://localhost:8080/ping，效果与 Gin 类似。
+
+
