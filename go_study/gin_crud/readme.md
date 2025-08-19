@@ -13,9 +13,9 @@ go-users-crud/
 └── users.db (运行后自动生成)
 ```
 
-安装依赖：  go mod tidy
-
-运行：  go run main.go   (自动启动后端服务:比如 http://localhost:8080/users，三秒后自动打开同级目录下的index.html)
+1. 安装依赖：  go mod tidy
+2. 运行：  go run main.go   (自动启动后端服务:比如 http://localhost:8080/users，三秒后自动打开同级目录下的index.html)
+3. 打包优化： `go build -ldflags="-s -w" -o usercrud.exe`
 
 二、✅ 使用步骤：
 - 后端 go run main.go
