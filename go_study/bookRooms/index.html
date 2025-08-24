@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>房间预订（Vanilla JS）</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#6b7280; --primary:#111; --primary-2:#1f2937; --border:#e5e7eb; --ok:#16a34a; --warn:#f59e0b; --err:#dc2626; --info:#2563eb;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto}
+    header{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--border)}
+    header .wrap{max-width:1100px;margin:auto;padding:12px 16px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .brand{font-weight:800;font-size:18px}
+    .muted{color:var(--muted)}
+    .status{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
+    .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
+    .bad{color:#7f1d1d;background:#fef2f2;border-color:#fecaca}
+
+    .container{max-width:1100px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:330px 1fr;gap:18px}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+    .card .head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card .body{padding:14px 16px}
+
+    .btn{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.ghost{background:#fff;color:#111;border:1px solid var(--border)}
+    .btn.warn{background:var(--warn);border-color:var(--warn)}
+    .btn.danger{background:var(--err);border-color:var(--err)}
+    .btn.mini{padding:6px 10px;border-radius:8px}
+
+    .grid{display:grid;gap:10px}
+    .grid.cols-2{grid-template-columns:1fr 1fr}
+
+    label{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+    input,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}
+    thead th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+    tbody tr:hover{background:#fafafa}
+
+    .badge{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
+    .b-pending{background:#fffbeb;color:#92400e;border-color:#fde68a}
+    .b-confirmed{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+    .b-cancelled{background:#fef2f2;color:#7f1d1d;border-color:#fecaca}
+    .b-done{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+
+    .empty{padding:20px;color:var(--muted);text-align:center;border:1px dashed var(--border);border-radius:12px;background:#fff}
+
+    .toast{position:fixed;right:16px;top:16px;display:grid;gap:8px;z-index:99}
+    .toast .t{background:#111;color:#fff;padding:8px 12px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+
+    /* modal */
+    dialog{border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15);padding:0;width:min(560px,92vw)}
+    dialog::backdrop{background:rgba(0,0,0,.35)}
+    .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
+    .modal-body{padding:14px 16px}
+    .modal-foot{padding:14px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">🏨 房间预订 · Vanilla</div>
+      <div class="row">
+        <label style="min-width:300px">
+          <span>API Base（例如 http://localhost:8080）</span>
+          <input id="apiBase" placeholder="http://localhost:8080" />
+        </label>
+        <span id="apiStatus" class="status muted">检测中…</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Rooms panel -->
+    <section class="card" id="roomsCard">
+      <div class="head">
+        <div>房间管理</div>
+        <div class="row">
+          <button class="btn ghost mini" id="btnReloadRooms">刷新</button>
+          <button class="btn mini" id="btnNewRoom">新建房间</button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="grid" style="margin-bottom:12px">
+          <label>
+            <span>已选房间</span>
+            <select id="selectRoom"></select>
+          </label>
+        </div>
+        <div id="roomsTableWrap"></div>
+      </div>
+    </section>
+
+    <!-- Bookings panel -->
+    <section class="card">
+      <div class="head">
+        <div>预订管理</div>
+        <div class="row">
+          <label>
+            <span class="muted" style="font-size:12px">状态筛选</span>
+            <select id="filterStatus">
+              <option value="">全部</option>
+              <option>PENDING</option>
+              <option>CONFIRMED</option>
+              <option>CANCELLED</option>
+              <option>DONE</option>
+            </select>
+          </label>
+          <button class="btn ghost mini" id="btnReloadBookings">刷新</button>
+          <button class="btn mini" id="btnNewBooking">新建预订</button>
+        </div>
+      </div>
+      <div class="body">
+        <div id="bookingsTableWrap"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- New Room Modal -->
+  <dialog id="dlgRoom">
+    <div class="modal-head">新建房间</div>
+    <div class="modal-body grid cols-2">
+      <label><span>房间号</span><input id="room_no" placeholder="A101" /></label>
+      <label><span>容量</span><input id="capacity" type="number" min="1" value="1" /></label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="dlgRoom.close()">取消</button>
+      <button class="btn" id="btnCreateRoom">创建</button>
+    </div>
+  </dialog>
+
+  <!-- New / Edit Booking Modal -->
+  <dialog id="dlgBooking">
+    <div class="modal-head" id="dlgBookingTitle">新建预订</div>
+    <div class="modal-body grid cols-2">
+      <label><span>房间</span><select id="bk_room"></select></label>
+      <label><span>Guest ID (UUID)</span><input id="bk_guest" placeholder="00000000-0000-0000-0000-000000000000" /></label>
+      <label><span>开始时间</span><input id="bk_start" type="datetime-local" /></label>
+      <label><span>结束时间</span><input id="bk_end" type="datetime-local" /></label>
+      <label><span>状态</span>
+        <select id="bk_status">
+          <option>PENDING</option>
+          <option>CONFIRMED</option>
+          <option>CANCELLED</option>
+          <option>DONE</option>
+        </select>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="dlgBooking.close()">取消</button>
+      <button class="btn" id="btnSaveBooking">保存</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ======== Utilities ========
+    function genUUID() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        // fallback
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+    const toast = (text, kind='info') => {
+      const t = document.createElement('div');
+      t.className = 't';
+      t.textContent = text;
+      $('#toast').appendChild(t);
+      setTimeout(()=> t.remove(), 2600);
+    };
+
+    const api = {
+      base: localStorage.getItem('apiBase') || 'http://localhost:8080',
+      async req(path, opts={}){
+        const res = await fetch(this.base + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+        let data = null; const text = await res.text(); try{ data = text ? JSON.parse(text) : null }catch{ data = text }
+        if(!res.ok){ throw new Error(data?.error || data || ('HTTP '+res.status)); }
+        return data;
+      },
+      health(){ return this.req('/healthz'); },
+      rooms:{
+        list(){ return api.req('/rooms'); },
+        create(body){ return api.req('/rooms', { method:'POST', body: JSON.stringify(body) }); },
+        remove(id){ return api.req('/rooms/'+id, { method:'DELETE' }); },
+        bookings(roomId){ return api.req(`/rooms/${roomId}/bookings`); }
+      },
+      bookings:{
+        list(params={}){ const q=new URLSearchParams(params).toString(); return api.req('/bookings'+(q?'?'+q:'')); },
+        get(id){ return api.req('/bookings/'+id); },
+        create(body){ return api.req('/bookings', { method:'POST', body: JSON.stringify(body) }); },
+        update(id, body){ return api.req('/bookings/'+id, { method:'PATCH', body: JSON.stringify(body) }); },
+        remove(id){ return api.req('/bookings/'+id, { method:'DELETE' }); },
+      }
+    };
+
+    function toLocalInputValue(rfc){ if(!rfc) return ''; const d=new Date(rfc); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}` }
+    function fromLocalInputValue(local){ if(!local) return ''; const d=new Date(local); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString(); }
+
+    function statusBadge(s){
+      const map = { PENDING:'b-pending', CONFIRMED:'b-confirmed', CANCELLED:'b-cancelled', DONE:'b-done' };
+      return `<span class="badge ${map[s]||''}">${s}</span>`;
+    }
+
+    // ======== App State ========
+    let rooms = [];
+    let bookings = [];
+    let editingBooking = null; // object or null
+
+    // ======== DOM elements ========
+    const apiBaseInput = $('#apiBase');
+    const apiStatus = $('#apiStatus');
+    const roomsTableWrap = $('#roomsTableWrap');
+    const bookingsTableWrap = $('#bookingsTableWrap');
+    const selectRoom = $('#selectRoom');
+
+    const dlgRoom = $('#dlgRoom');
+    const btnCreateRoom = $('#btnCreateRoom');
+    const inputRoomNo = $('#room_no');
+    const inputCapacity = $('#capacity');
+
+    const dlgBooking = $('#dlgBooking');
+    const dlgBookingTitle = $('#dlgBookingTitle');
+    const inputBkRoom = $('#bk_room');
+    const inputBkGuest = $('#bk_guest');
+    const inputBkStart = $('#bk_start');
+    const inputBkEnd = $('#bk_end');
+    const inputBkStatus = $('#bk_status');
+    const btnSaveBooking = $('#btnSaveBooking');
+
+    // ======== Event bindings ========
+    apiBaseInput.value = api.base;
+    apiBaseInput.addEventListener('change', async ()=>{
+      api.base = apiBaseInput.value.trim().replace(/\/$/, '');
+      localStorage.setItem('apiBase', api.base);
+      await checkHealth();
+      await loadRooms();
+      await loadBookings();
+    });
+
+    $('#btnReloadRooms').onclick = loadRooms;
+    $('#btnNewRoom').onclick = ()=>{ inputRoomNo.value=''; inputCapacity.value='1'; dlgRoom.showModal(); };
+    btnCreateRoom.onclick = async ()=>{
+      try{
+        const body = { room_no: inputRoomNo.value.trim(), capacity: Number(inputCapacity.value||1) };
+        if(!body.room_no || body.capacity<=0) return toast('请填写房间号和正确的容量');
+        const r = await api.rooms.create(body);
+        rooms.unshift(r); renderRooms(); fillRoomSelect(); toast('创建房间成功'); dlgRoom.close();
+      }catch(e){ toast('创建失败：'+e.message) }
+    };
+
+    $('#btnReloadBookings').onclick = loadBookings;
+    $('#btnNewBooking').onclick = ()=> openBookingModal();
+
+    selectRoom.addEventListener('change', ()=> loadBookings());
+    $('#filterStatus').addEventListener('change', ()=> loadBookings());
+
+    btnSaveBooking.onclick = async ()=>{
+        if(!inputBkGuest.value) {
+            inputBkGuest.value = genUUID()
+        }
+      try{
+        const payload = {
+          room_id: inputBkRoom.value,
+          guest_id: inputBkGuest.value.trim(),
+          starts_at: fromLocalInputValue(inputBkStart.value),
+          ends_at: fromLocalInputValue(inputBkEnd.value),
+          status: inputBkStatus.value
+        };
+        if(editingBooking){
+          const saved = await api.bookings.update(editingBooking.id, payload);
+          const idx = bookings.findIndex(b=>b.id===editingBooking.id); if(idx>=0) bookings[idx]=saved;
+          toast('已更新预订');
+        }else{
+          const created = await api.bookings.create(payload);
+          bookings.unshift(created); toast('创建预订成功');
+        }
+        dlgBooking.close(); renderBookings();
+      }catch(e){ toast('提交失败：'+e.message) }
+    };
+
+    // ======== Loaders ========
+    async function checkHealth(){
+      apiStatus.textContent = '检测中…'; apiStatus.className = 'status muted';
+      try{ const h = await api.health(); apiStatus.textContent = h.ok? '在线':'离线'; apiStatus.className = 'status '+(h.ok?'ok':'bad'); }
+      catch{ apiStatus.textContent = '离线'; apiStatus.className = 'status bad'; }
+    }
+
+    async function loadRooms(){
+      try{ rooms = await api.rooms.list(); renderRooms(); fillRoomSelect(); }
+      catch(e){ rooms=[]; renderRooms(); toast('加载房间失败：'+e.message) }
+    }
+
+    async function loadBookings(){
+      const params = {};
+      const rid = selectRoom.value; if(rid) params.room_id = rid;
+      const st = $('#filterStatus').value; if(st) params.status = st;
+      try{ bookings = await api.bookings.list(params); renderBookings(); }
+      catch(e){ bookings=[]; renderBookings(); toast('加载预订失败：'+e.message) }
+    }
+
+    // ======== Renderers ========
+    function renderRooms(){
+      if(!rooms.length){ roomsTableWrap.innerHTML = '<div class="empty">暂无房间，请先创建。</div>'; return; }
+      roomsTableWrap.innerHTML = `
+        <table>
+          <thead><tr><th>选择</th><th>房间号</th><th>容量</th><th>创建时间</th><th style="text-align:right">操作</th></tr></thead>
+          <tbody>
+            ${rooms.map(r=>`
+              <tr>
+                <td><input type="radio" name="roomPick" ${selectRoom.value===r.id?'checked':''} onclick="document.getElementById('selectRoom').value='${r.id}'; window.loadBookings()"/></td>
+                <td class="mono">${r.room_no}</td>
+                <td>${r.capacity}</td>
+                <td>${new Date(r.created_at).toLocaleString()}</td>
+                <td style="text-align:right">
+                  <button class="btn danger mini" onclick="window.deleteRoom('${r.id}')">删除</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function fillRoomSelect(){
+      selectRoom.innerHTML = `<option value="">全部房间</option>` + rooms.map(r=>`<option value="${r.id}">${r.room_no}（${r.capacity}人）</option>`).join('');
+      // 保持已选
+      const cur = localStorage.getItem('selectedRoom');
+      if(cur && rooms.some(r=>r.id===cur)) selectRoom.value = cur;
+      selectRoom.onchange = ()=>{ localStorage.setItem('selectedRoom', selectRoom.value); };
+      // Booking Modal 房间下拉
+      inputBkRoom.innerHTML = rooms.map(r=>`<option value="${r.id}">${r.room_no}（${r.capacity}人）</option>`).join('');
+    }
+
+    function renderBookings(){
+      if(!bookings.length){ bookingsTableWrap.innerHTML = '<div class="empty">暂无预订记录</div>'; return; }
+      bookingsTableWrap.innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>开始</th><th>结束</th><th>状态</th><th>Guest</th><th>房间</th><th style="text-align:right">操作</th></tr></thead>
+          <tbody>
+            ${bookings.map(b=>`
+              <tr>
+                <td class="mono">${b.id.slice(0,8)}…</td>
+                <td>${new Date(b.starts_at).toLocaleString()}</td>
+                <td>${new Date(b.ends_at).toLocaleString()}</td>
+                <td>${statusBadge(b.status)}</td>
+                <td class="mono">${b.guest_id}</td>
+                <td class="mono">${b.room_id.slice(0,8)}…</td>
+                <td style="text-align:right">
+                  <button class="btn ghost mini" onclick='window.editBooking(${JSON.stringify(b)})'>编辑</button>
+                  <button class="btn mini" onclick='window.quickStatus("${b.id}","CONFIRMED")'>确认</button>
+                  <button class="btn warn mini" onclick='window.quickStatus("${b.id}","DONE")'>完成</button>
+                  <button class="btn danger mini" onclick='window.deleteBooking("${b.id}")'>删除</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Expose some actions for inline handlers
+    window.deleteRoom = async (id)=>{
+      if(!confirm('确认删除该房间？其下预订将被删除。')) return;
+      try{ await api.rooms.remove(id); rooms = rooms.filter(r=>r.id!==id); renderRooms(); fillRoomSelect(); toast('已删除房间'); loadBookings(); }
+      catch(e){ toast('删除失败：'+e.message) }
+    };
+
+    function openBookingModal(b){
+      editingBooking = b||null;
+      dlgBookingTitle.textContent = b? '编辑预订' : '新建预订';
+      if(rooms.length){ inputBkRoom.value = b? b.room_id : (selectRoom.value || rooms[0].id); }
+      inputBkGuest.value = b? b.guest_id : '';
+      inputBkStart.value = b? toLocalInputValue(b.starts_at) : '';
+      inputBkEnd.value = b? toLocalInputValue(b.ends_at) : '';
+      inputBkStatus.value = b? b.status : 'PENDING';
+      dlgBooking.showModal();
+    }
+
+    window.editBooking = (b)=> openBookingModal(b);
+
+    window.quickStatus = async (id, status)=>{
+      try{ const saved = await api.bookings.update(id, { status }); bookings = bookings.map(x=>x.id===id?saved:x); renderBookings(); toast('状态已更新'); }
+      catch(e){ toast('更新失败：'+e.message) }
+    };
+
+    window.deleteBooking = async (id)=>{
+      if(!confirm('确认删除该预订？')) return;
+      try{ await api.bookings.remove(id); bookings = bookings.filter(x=>x.id!==id); renderBookings(); toast('已删除预订'); }
+      catch(e){ toast('删除失败：'+e.message) }
+    };
+
+    // ======== Boot ========
+    (async function init(){
+      await checkHealth();
+      await loadRooms();
+      await loadBookings();
+    })();
+  </script>
+</body>
+</html>
