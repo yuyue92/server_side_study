@@ -4,9 +4,9 @@
 - 支持 users↔userInfo（一对一，含 ulist1、umap1 JSON 字段）和 orders↔orderDetail（一对多，含 olist1），并已开启 CORS，前端可直接调用。
 
 追加：
-✔ 静态文件服务（把 tester.html 放在 static/ 目录）
-✔ 启动后 自动打开浏览器 访问 http://localhost:8080/tester.html
-✔ 保持原来的 API 路由不变
+- ✔ 静态文件服务（把 tester.html 放在 static/ 目录）
+- ✔ 启动后 自动打开浏览器 访问 http://localhost:8080/tester.html
+- ✔ 保持原来的 API 路由不变
 
 **【用户和订单管理】前端界面**
 
