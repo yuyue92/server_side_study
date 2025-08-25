@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Go REST API 调试台 · Users / Orders CRUD</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--muted:#334155;--fg:#e5e7eb;--acc:#22d3ee;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1022, #0e1a31);font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;color:var(--fg);}    
+    h1,h2{margin:0 0 .5rem}
+    a{color:var(--acc)}
+    .wrap{max-width:1200px;margin:32px auto;padding:0 16px}
+    .grid{display:grid;gap:16px}
+    .g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:rgba(17,24,39,.85);backdrop-filter: blur(6px);border:1px solid #1f2937;border-radius:16px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    label{font-weight:600;color:#cbd5e1}
+    input,textarea,select{background:#0b1220;border:1px solid #243244;color:var(--fg);border-radius:10px;padding:10px 12px;outline:none;width:100%}
+    input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(34,211,238,.15)}
+    .btn{appearance:none;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;transition:.15s ease;display:inline-flex;align-items:center;gap:8px}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn-primary{background:var(--acc);color:#0b1022}
+    .btn-ok{background:var(--ok);color:#06231e}
+    .btn-warn{background:var(--warn);color:#2b1600}
+    .btn-err{background:var(--err)}
+    .tag{display:inline-block;padding:.2rem .5rem;border-radius:999px;background:#0b1220;border:1px solid #243244;color:#cbd5e1;font-size:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px dashed #1f2a40;vertical-align:top}
+    th{color:#93c5fd;text-align:left}
+    .muted{color:#9aa7bd}
+    .hr{height:1px;background:#1f2a40;margin:10px 0 16px}
+    .pill{border:1px solid #334155;border-radius:999px;padding:6px 10px;display:inline-flex;gap:8px;align-items:center}
+    .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .small{font-size:12px}
+    .list{display:flex;gap:6px;flex-wrap:wrap}
+    .code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background:#0b1220;border:1px solid #243244;border-radius:10px;padding:10px;color:#e2e8f0}
+  </style>
+</head>
+<body>
+  <div class="wrap grid">
+    <header class="card">
+      <div class="section-title">
+        <h1>Go REST API 调试台</h1>
+        <span class="pill small">Users / UserInfo · Orders / OrderDetails</span>
+      </div>
+      <div class="grid g-2">
+        <div class="row">
+          <label class="small">API Base URL</label>
+          <input id="baseUrl" value="http://localhost:8080" />
+        </div>
+        <div class="row" style="align-items:flex-end">
+          <button class="btn btn-primary" id="btnSeed">一键造测试数据 /seed</button>
+          <button class="btn" id="btnHealth">健康检查</button>
+          <span id="status" class="small muted"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Users -->
+    <section class="card">
+      <div class="section-title">
+        <h2>Users / UserInfo</h2>
+        <div class="list">
+          <button class="btn" id="btnListUsers">刷新列表</button>
+          <label class="pill small"><input type="checkbox" id="ckWithInfo" style="width:auto;margin-right:6px"> withInfo=1</label>
+        </div>
+      </div>
+      <div class="grid g-2">
+        <div>
+          <div class="row">
+            <label>id（更新/删除用，可留空）</label>
+            <input id="u_id" placeholder="自动赋值" />
+          </div>
+          <div class="row"><label>name</label><input id="u_name" placeholder="Alice"/></div>
+          <div class="row"><label>age</label><input id="u_age" type="number" placeholder="28"/></div>
+          <div class="row"><label>email</label><input id="u_email" placeholder="alice@example.com"/></div>
+          <div class="row"><label>userInfo.ulist1（逗号分隔）</label><input id="u_ulist1" placeholder="tag1, tag2"/></div>
+          <div class="row"><label>userInfo.umap1（JSON）</label><textarea id="u_umap1" rows="3" placeholder='{"k1":"v1","k2":"v2"}'></textarea></div>
+          <div class="list" style="margin-top:8px">
+            <button class="btn btn-ok" id="btnCreateUser">创建 User</button>
+            <button class="btn btn-warn" id="btnUpdateUser">更新 User</button>
+            <button class="btn btn-err" id="btnDeleteUser">删除 User</button>
+          </div>
+        </div>
+        <div>
+          <div class="row"><label>按邮箱查询</label>
+            <div class="row" style="width:100%">
+              <input id="byEmail" placeholder="alice@example.com"/>
+              <button class="btn" id="btnByEmail">查询</button>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div class="row">
+            <label>接口请求/响应</label>
+            <pre class="code" id="u_log" style="max-height:260px;overflow:auto"></pre>
+          </div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div>
+        <table id="u_table">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Age</th><th>UserInfo</th><th>CreatedAt</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section class="card">
+      <div class="section-title">
+        <h2>Orders / OrderDetails</h2>
+        <div class="list">
+          <button class="btn" id="btnListOrders">刷新列表</button>
+          <label class="pill small"><input type="checkbox" id="ckWithDetails" style="width:auto;margin-right:6px"> withDetails=1</label>
+        </div>
+      </div>
+      <div class="grid g-2">
+        <div>
+          <div class="row"><label>id（更新/删除用，可留空）</label><input id="o_id"/></div>
+          <div class="row"><label>name</label><input id="o_name" placeholder="OrderA"/></div>
+          <div class="row"><label>price</label><input id="o_price" type="number" step="0.01" placeholder="99.5"/></div>
+          <div class="row"><label>details：在下方添加多行</label></div>
+          <div id="detailsWrap" class="grid" style="gap:10px"></div>
+          <div class="list" style="margin-top:8px">
+            <button class="btn" id="btnAddDetail">+ 添加明细行</button>
+            <button class="btn btn-ok" id="btnCreateOrder">创建 Order（含明细）</button>
+            <button class="btn btn-warn" id="btnUpdateOrder">更新 Order（覆盖明细）</button>
+            <button class="btn btn-err" id="btnDeleteOrder">删除 Order</button>
+          </div>
+        </div>
+        <div>
+          <div class="row"><label>为指定订单追加明细（POST /orders/:id/details）</label></div>
+          <div id="appendWrap" class="grid" style="gap:10px"></div>
+          <div class="list">
+            <input id="appendOrderId" placeholder="目标订单ID" style="max-width:180px" />
+            <button class="btn" id="btnAddAppendDetail">+ 添加待追加明细</button>
+            <button class="btn btn-ok" id="btnAppendDetails">提交追加</button>
+          </div>
+          <div class="hr"></div>
+          <div class="row">
+            <label>接口请求/响应</label>
+            <pre class="code" id="o_log" style="max-height:260px;overflow:auto"></pre>
+          </div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div>
+        <table id="o_table">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Price</th><th>Details</th><th>CreatedAt</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="card small muted">小贴士：JSON 输入请确保格式正确。数组可用逗号分隔（会自动转为数组）。示例后端默认端口 <code>http://localhost:8080</code>。</footer>
+  </div>
+
+  <template id="tplDetail">
+    <div class="card">
+      <div class="row"><label>detail1</label><input class="d_detail1" placeholder="A-1"/></div>
+      <div class="row"><label>olist1（逗号分隔）</label><input class="d_olist1" placeholder="x, y"/></div>
+      <div class="row"><button class="btn btn-err btnRemove">删除该明细</button></div>
+    </div>
+  </template>
+
+  <script>
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const statusEl = $('#status');
+    const baseUrlEl = $('#baseUrl');
+
+    function setStatus(msg){ statusEl.textContent = msg; }
+
+    function safeJSON(v){ try{ return JSON.stringify(v, null, 2);}catch(e){ return String(v)} }
+    function parseCSV(str){ return (str||'').split(',').map(s=>s.trim()).filter(Boolean); }
+    function parseJSONOrEmpty(str){ if(!str) return {}; try{ return JSON.parse(str);}catch(e){ return {}; } }
+
+    async function api(path, opts={}){
+      const url = baseUrlEl.value.replace(/\/$/, '') + path;
+      const res = await fetch(url, Object.assign({
+        headers: { 'Content-Type': 'application/json' }
+      }, opts));
+      const text = await res.text();
+      let data; try{ data = text? JSON.parse(text): null; }catch{ data = text }
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    // ===== Users =====
+    async function listUsers(){
+      const withInfo = $('#ckWithInfo').checked ? '?withInfo=1' : '';
+      const r = await api('/users' + withInfo);
+      $('#u_log').textContent = safeJSON(r);
+      if(r.ok){ renderUsers(r.data) } else { alert('获取失败: '+r.status) }
+    }
+
+    function renderUsers(list){
+      const tb = $('#u_table tbody'); tb.innerHTML='';
+      list.forEach(u=>{
+        const tr = document.createElement('tr');
+        const info = u.userInfo ? `ulist1: ${safeJSON(u.userInfo.ulist1)}\numap1: ${safeJSON(u.userInfo.umap1)}` : '<span class="muted">(nil)</span>';
+        tr.innerHTML = `
+          <td>${u.id}</td>
+          <td>${u.name||''}</td>
+          <td>${u.email||''}</td>
+          <td>${u.age??''}</td>
+          <td><pre class="code" style="white-space:pre-wrap">${info}</pre></td>
+          <td class="small muted">${u.createdAt||''}</td>
+          <td>
+            <button class="btn" data-act="fill" data-id="${u.id}">填充</button>
+            <button class="btn btn-err" data-act="del" data-id="${u.id}">删除</button>
+          </td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    $('#u_table').addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const id = btn.dataset.id; const act = btn.dataset.act;
+      if(act==='fill'){
+        const r = await api('/users/'+id);
+        if(r.ok){
+          const u = r.data;
+          $('#u_id').value = u.id; $('#u_name').value = u.name||''; $('#u_age').value = u.age||''; $('#u_email').value = u.email||'';
+          $('#u_ulist1').value = (u.userInfo&&u.userInfo.ulist1? u.userInfo.ulist1.join(', '): '');
+          $('#u_umap1').value = safeJSON(u.userInfo? u.userInfo.umap1: {});
+        }
+      } else if(act==='del'){
+        if(confirm('确定删除用户 '+id+' ?')){
+          const r = await api('/users/'+id,{method:'DELETE'});
+          $('#u_log').textContent = safeJSON(r);
+          listUsers();
+        }
+      }
+    });
+
+    $('#btnCreateUser').onclick = async ()=>{
+      const body = {
+        name: $('#u_name').value.trim(),
+        age: Number($('#u_age').value||0),
+        email: $('#u_email').value.trim(),
+        userInfo: {
+          ulist1: parseCSV($('#u_ulist1').value),
+          umap1: parseJSONOrEmpty($('#u_umap1').value)
+        }
+      };
+      const r = await api('/users',{method:'POST', body: JSON.stringify(body)});
+      $('#u_log').textContent = safeJSON(r);
+      if(r.ok) listUsers();
+    };
+
+    $('#btnUpdateUser').onclick = async ()=>{
+      const id = $('#u_id').value.trim(); if(!id) return alert('请先填充/输入用户ID');
+      const body = {
+        name: $('#u_name').value.trim(),
+        age: Number($('#u_age').value||0),
+        email: $('#u_email').value.trim(),
+        userInfo: {
+          ulist1: parseCSV($('#u_ulist1').value),
+          umap1: parseJSONOrEmpty($('#u_umap1').value)
+        }
+      };
+      const r = await api('/users/'+id,{method:'PUT', body: JSON.stringify(body)});
+      $('#u_log').textContent = safeJSON(r);
+      if(r.ok) listUsers();
+    };
+
+    $('#btnDeleteUser').onclick = async ()=>{
+      const id = $('#u_id').value.trim(); if(!id) return alert('请输入用户ID');
+      const r = await api('/users/'+id,{method:'DELETE'});
+      $('#u_log').textContent = safeJSON(r);
+      if(r.ok) listUsers();
+    };
+
+    $('#btnByEmail').onclick = async ()=>{
+      const email = $('#byEmail').value.trim(); if(!email) return;
+      const r = await api('/users/by-email/'+encodeURIComponent(email));
+      $('#u_log').textContent = safeJSON(r);
+    };
+
+    $('#btnListUsers').onclick = listUsers;
+
+    // ===== Orders =====
+    function newDetailRow(parent){
+      const tpl = $('#tplDetail').content.cloneNode(true);
+      const row = tpl.children[0];
+      row.querySelector('.btnRemove').onclick = ()=> row.remove();
+      parent.appendChild(row);
+    }
+
+    $('#btnAddDetail').onclick = ()=> newDetailRow($('#detailsWrap'));
+    $('#btnAddAppendDetail').onclick = ()=> newDetailRow($('#appendWrap'));
+
+    function collectDetails(root){
+      return $$('.card', root).map(c=>({
+        detail1: $('.d_detail1', c).value.trim(),
+        olist1: parseCSV($('.d_olist1', c).value)
+      })).filter(d=>d.detail1 || (d.olist1&&d.olist1.length));
+    }
+
+    async function listOrders(){
+      const withDetails = $('#ckWithDetails').checked ? '?withDetails=1' : '';
+      const r = await api('/orders'+withDetails);
+      $('#o_log').textContent = safeJSON(r);
+      if(r.ok) renderOrders(r.data);
+    }
+
+    function renderOrders(list){
+      const tb = $('#o_table tbody'); tb.innerHTML='';
+      list.forEach(o=>{
+        const tr = document.createElement('tr');
+        const details = (o.details||[]).map(d=>`• ${d.detail1} [${(d.olist1||[]).join(', ')}]`).join('\n');
+        tr.innerHTML = `
+          <td>${o.id}</td>
+          <td>${o.name||''}</td>
+          <td>${o.price??''}</td>
+          <td><pre class="code" style="white-space:pre-wrap">${details||'<span class="muted">(none)</span>'}</pre></td>
+          <td class="small muted">${o.createdAt||''}</td>
+          <td>
+            <button class="btn" data-act="fill" data-id="${o.id}">填充</button>
+            <button class="btn btn-err" data-act="del" data-id="${o.id}">删除</button>
+          </td>`;
+        tb.appendChild(tr);
+      })
+    }
+
+    $('#o_table').addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const id = btn.dataset.id; const act = btn.dataset.act;
+      if(act==='fill'){
+        const r = await api('/orders/'+id);
+        if(r.ok){
+          const o = r.data;
+          $('#o_id').value = o.id; $('#o_name').value = o.name||''; $('#o_price').value = o.price||'';
+          $('#detailsWrap').innerHTML='';
+          (o.details||[]).forEach(d=>{
+            newDetailRow($('#detailsWrap'));
+            const last = $('#detailsWrap').lastElementChild;
+            $('.d_detail1', last).value = d.detail1||'';
+            $('.d_olist1', last).value = (d.olist1||[]).join(', ');
+          })
+        }
+      } else if(act==='del'){
+        if(confirm('确定删除订单 '+id+' ?')){
+          const r = await api('/orders/'+id,{method:'DELETE'});
+          $('#o_log').textContent = safeJSON(r);
+          listOrders();
+        }
+      }
+    });
+
+    $('#btnCreateOrder').onclick = async ()=>{
+      const body = {
+        name: $('#o_name').value.trim(),
+        price: Number($('#o_price').value||0),
+        details: collectDetails($('#detailsWrap'))
+      };
+      const r = await api('/orders',{method:'POST', body: JSON.stringify(body)});
+      $('#o_log').textContent = safeJSON(r);
+      if(r.ok) listOrders();
+    };
+
+    $('#btnUpdateOrder').onclick = async ()=>{
+      const id = $('#o_id').value.trim(); if(!id) return alert('请输入订单ID');
+      const body = {
+        name: $('#o_name').value.trim(),
+        price: Number($('#o_price').value||0),
+        details: collectDetails($('#detailsWrap'))
+      };
+      const r = await api('/orders/'+id,{method:'PUT', body: JSON.stringify(body)});
+      $('#o_log').textContent = safeJSON(r);
+      if(r.ok) listOrders();
+    };
+
+    $('#btnDeleteOrder').onclick = async ()=>{
+      const id = $('#o_id').value.trim(); if(!id) return alert('请输入订单ID');
+      const r = await api('/orders/'+id,{method:'DELETE'});
+      $('#o_log').textContent = safeJSON(r);
+      if(r.ok) listOrders();
+    };
+
+    $('#btnAppendDetails').onclick = async ()=>{
+      const id = $('#appendOrderId').value.trim(); if(!id) return alert('请输入目标订单ID');
+      const payload = collectDetails($('#appendWrap'));
+      const r = await api('/orders/'+id+'/details',{method:'POST', body: JSON.stringify(payload)});
+      $('#o_log').textContent = safeJSON(r);
+      if(r.ok) listOrders();
+    };
+
+    // ===== misc =====
+    $('#btnHealth').onclick = async ()=>{
+      const r = await api('/health'); setStatus(r.ok? '健康: OK':'健康: FAIL'); };
+    $('#btnSeed').onclick = async ()=>{ const r = await api('/seed',{method:'POST'}); setStatus('Seed: '+r.status); };
+
+    // 初始加载
+    listUsers(); listOrders();
+  </script>
+</body>
+</html>

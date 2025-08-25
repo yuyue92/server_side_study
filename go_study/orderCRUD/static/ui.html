@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>用户和订单管理</title>
+<style>
+  * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body { margin: 0; background: #f4f6f8; color: #333; }
+
+  header { background: #1976d2; color: #fff; padding: 15px 20px; font-size: 20px; font-weight: bold; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+  .container { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
+
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; flex: 1 1 45%; min-width: 400px; display: flex; flex-direction: column; }
+  .card h2 { margin: 0 0 15px; font-size: 18px; color: #1976d2; border-bottom: 2px solid #e3e3e3; padding-bottom: 8px; }
+
+  .toolbar { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .toolbar button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.3s; }
+  .btn-add { background: #4caf50; color: #fff; }
+  .btn-add:hover { background: #43a047; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table thead { background: #f0f0f0; }
+  table th, table td { text-align: left; padding: 8px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+  table tr:hover { background: #fafafa; }
+
+  .actions button { margin-right: 5px; padding: 4px 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; }
+  .btn-edit { background: #1976d2; color: #fff; }
+  .btn-edit:hover { background: #1565c0; }
+  .btn-del { background: #e53935; color: #fff; }
+  .btn-del:hover { background: #c62828; }
+
+  /* Modal */
+  .modal { display: none; position: fixed; z-index: 999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+  .modal-content { background: #fff; border-radius: 10px; width: 600px; max-width: 95%; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1; transform: translateY(0);} }
+
+  .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .modal-close { cursor: pointer; color: #888; font-size: 20px; }
+  .modal-close:hover { color: #333; }
+
+  .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 10px; }
+  .tab { flex: 1; text-align: center; padding: 8px 0; cursor: pointer; font-size: 14px; }
+  .tab.active { border-bottom: 3px solid #1976d2; color: #1976d2; font-weight: bold; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-grid label { font-size: 13px; color: #555; }
+  .form-grid input, .form-grid textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+  .modal-footer { text-align: right; margin-top: 10px; }
+  .btn-save { background: #1976d2; color: #fff; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; }
+  .btn-save:hover { background: #1565c0; }
+
+  .details-table td input { width: 90%; padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
+  .btn-small { font-size: 12px; padding: 4px 8px; }
+  .btn-add-row { background: #43a047; color: #fff; }
+  .btn-add-row:hover { background: #388e3c; }
+  .btn-remove-row { background: #e53935; color: #fff; }
+  .btn-remove-row:hover { background: #c62828; }
+</style>
+</head>
+<body>
+<header>用户和订单管理系统</header>
+<div class="container">
+  <div class="card">
+    <h2>用户管理</h2>
+    <div class="toolbar"><button class="btn-add" onclick="openUserModal()">+ 新增用户</button></div>
+    <table id="userTable">
+      <thead><tr><th>ID</th><th>姓名</th><th>邮箱</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>订单管理</h2>
+    <div class="toolbar"><button class="btn-add" onclick="openOrderModal()">+ 新增订单</button></div>
+    <table id="orderTable">
+      <thead><tr><th>ID</th><th>名称</th><th>价格</th><th>操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal for User -->
+<div id="userModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">用户信息 <span class="modal-close" onclick="closeModal('userModal')">×</span></div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('user-basic')">基本信息</div>
+      <div class="tab" onclick="switchTab('user-info')">附加信息</div>
+    </div>
+    <div id="user-basic" class="tab-content active">
+      <div class="form-grid">
+        <div><label>姓名</label><input id="uname"></div>
+        <div><label>年龄</label><input id="uage" type="number"></div>
+        <div><label>邮箱</label><input id="uemail"></div>
+      </div>
+    </div>
+    <div id="user-info" class="tab-content">
+      <div class="form-grid">
+        <div><label>ulist1 (逗号分隔)</label><input id="ulist1"></div>
+        <div><label>umap1 (JSON)</label><textarea id="umap1" rows="3"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-save" onclick="saveUser()">保存</button></div>
+  </div>
+</div>
+
+<!-- Modal for Order -->
+<div id="orderModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">订单信息 <span class="modal-close" onclick="closeModal('orderModal')">×</span></div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('order-basic')">基本信息</div>
+      <div class="tab" onclick="switchTab('order-details')">明细信息</div>
+    </div>
+    <div id="order-basic" class="tab-content active">
+      <div class="form-grid">
+        <div><label>名称</label><input id="oname"></div>
+        <div><label>价格</label><input id="oprice" type="number"></div>
+      </div>
+    </div>
+    <div id="order-details" class="tab-content">
+      <table id="detailsTable">
+        <thead><tr><th>Detail1</th><th>olist1 (逗号分隔)</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button class="btn-add-row btn-small" onclick="addDetailRow()">+ 添加明细</button>
+    </div>
+    <div class="modal-footer"><button class="btn-save" onclick="saveOrder()">保存</button></div>
+  </div>
+</div>
+
+<script>
+const apiBase = 'http://localhost:8080';
+let editingUserId = null;
+let editingOrderId = null;
+
+function fetchUsers(){
+  fetch(apiBase+'/users?withInfo=1').then(r=>r.json()).then(data=>{
+    const tbody=document.querySelector('#userTable tbody');
+    tbody.innerHTML='';
+    data.forEach(u=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${u.id}</td><td>${u.name}</td><td>${u.email}</td><td class='actions'>
+      <button class='btn-edit' onclick='editUser(${JSON.stringify(u)})'>编辑</button>
+      <button class='btn-del' onclick='deleteUser(${u.id})'>删除</button></td>`;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function fetchOrders(){
+  fetch(apiBase+'/orders?withDetails=1').then(r=>r.json()).then(data=>{
+    const tbody=document.querySelector('#orderTable tbody');
+    tbody.innerHTML='';
+    data.forEach(o=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${o.id}</td><td>${o.name}</td><td>${o.price}</td><td class='actions'>
+      <button class='btn-edit' onclick='editOrder(${JSON.stringify(o)})'>编辑</button>
+      <button class='btn-del' onclick='deleteOrder(${o.id})'>删除</button></td>`;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function openUserModal(){ editingUserId=null; document.getElementById('uname').value=''; document.getElementById('uage').value=''; document.getElementById('uemail').value=''; document.getElementById('ulist1').value=''; document.getElementById('umap1').value='{}'; document.getElementById('userModal').style.display='flex'; }
+function openOrderModal(){ editingOrderId=null; document.getElementById('oname').value=''; document.getElementById('oprice').value=''; document.querySelector('#detailsTable tbody').innerHTML=''; addDetailRow(); document.getElementById('orderModal').style.display='flex'; }
+
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+
+function editUser(u){ editingUserId=u.id; document.getElementById('uname').value=u.name; document.getElementById('uage').value=u.age; document.getElementById('uemail').value=u.email; if(u.userInfo){ document.getElementById('ulist1').value=(u.userInfo.ulist1||[]).join(', '); document.getElementById('umap1').value=JSON.stringify(u.userInfo.umap1||{});} document.getElementById('userModal').style.display='flex'; }
+function editOrder(o){ editingOrderId=o.id; document.getElementById('oname').value=o.name; document.getElementById('oprice').value=o.price; const tbody=document.querySelector('#detailsTable tbody'); tbody.innerHTML=''; if(o.details){ o.details.forEach(d=>addDetailRow(d.detail1,(d.olist1||[]).join(', '))); } else { addDetailRow(); } document.getElementById('orderModal').style.display='flex'; }
+
+function saveUser(){ const name=document.getElementById('uname').value.trim(); const age=parseInt(document.getElementById('uage').value)||0; const email=document.getElementById('uemail').value.trim(); const ulist1=document.getElementById('ulist1').value.split(',').map(s=>s.trim()).filter(s=>s); let umap1={}; try{umap1=JSON.parse(document.getElementById('umap1').value);}catch(e){alert('umap1 必须是合法 JSON');return;} const body={ name, age, email, userInfo:{ ulist1, umap1 }}; const method=editingUserId?'PUT':'POST'; const url=editingUserId?`${apiBase}/users/${editingUserId}`:`${apiBase}/users`; fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(()=>{ closeModal('userModal'); fetchUsers(); }); }
+
+function saveOrder(){ const name=document.getElementById('oname').value.trim(); const price=parseFloat(document.getElementById('oprice').value)||0; const rows=document.querySelectorAll('#detailsTable tbody tr'); const details=[...rows].map(r=>({ detail1:r.querySelector('td:nth-child(1) input').value.trim(), olist1:r.querySelector('td:nth-child(2) input').value.split(',').map(s=>s.trim()).filter(s=>s) })); const body={ name, price, details}; const method=editingOrderId?'PUT':'POST'; const url=editingOrderId?`${apiBase}/orders/${editingOrderId}`:`${apiBase}/orders`; fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(()=>{ closeModal('orderModal'); fetchOrders(); }); }
+
+function deleteUser(id){ if(confirm('确认删除用户?')) fetch(`${apiBase}/users/${id}`,{method:'DELETE'}).then(()=>fetchUsers()); }
+function deleteOrder(id){ if(confirm('确认删除订单?')) fetch(`${apiBase}/orders/${id}`,{method:'DELETE'}).then(()=>fetchOrders()); }
+
+function addDetailRow(detail='',olist=''){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input value='${detail}'></td><td><input value='${olist}'></td><td><button class='btn-remove-row btn-small' onclick='this.parentElement.parentElement.remove()'>删除</button></td>`; document.querySelector('#detailsTable tbody').appendChild(tr); }
+
+function switchTab(id){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); const tab=document.querySelector(`.tab[onclick*="${id}"]`); if(tab) tab.classList.add('active'); document.getElementById(id).classList.add('active'); }
+
+document.addEventListener('DOMContentLoaded',()=>{ fetchUsers(); fetchOrders(); });
+</script>
+</body>
+</html>
