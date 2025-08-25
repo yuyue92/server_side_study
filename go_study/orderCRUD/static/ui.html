@@ -25,7 +25,7 @@
   table th, table td { text-align: left; padding: 8px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
   table tr:hover { background: #fafafa; }
 
-  .actions button { margin-right: 5px; padding: 4px 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; }
+  .actions button, #order-details button { margin-right: 5px; padding: 4px 10px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; }
   .btn-edit { background: #1976d2; color: #fff; }
   .btn-edit:hover { background: #1565c0; }
   .btn-del { background: #e53935; color: #fff; }
@@ -167,26 +167,114 @@ function fetchOrders(){
   });
 }
 
-function openUserModal(){ editingUserId=null; document.getElementById('uname').value=''; document.getElementById('uage').value=''; document.getElementById('uemail').value=''; document.getElementById('ulist1').value=''; document.getElementById('umap1').value='{}'; document.getElementById('userModal').style.display='flex'; }
-function openOrderModal(){ editingOrderId=null; document.getElementById('oname').value=''; document.getElementById('oprice').value=''; document.querySelector('#detailsTable tbody').innerHTML=''; addDetailRow(); document.getElementById('orderModal').style.display='flex'; }
+function openUserModal(){
+    editingUserId=null; 
+    document.getElementById('uname').value=''; 
+    document.getElementById('uage').value=''; 
+    document.getElementById('uemail').value=''; 
+    document.getElementById('ulist1').value=''; 
+    document.getElementById('umap1').value='{}'; 
+    document.getElementById('userModal').style.display='flex'; 
+}
+function openOrderModal(){ 
+    editingOrderId=null; 
+    document.getElementById('oname').value=''; 
+    document.getElementById('oprice').value=''; 
+    document.querySelector('#detailsTable tbody').innerHTML=''; 
+    addDetailRow(); 
+    document.getElementById('orderModal').style.display='flex'; 
+}
 
-function closeModal(id){ document.getElementById(id).style.display='none'; }
+function closeModal(id){ 
+    document.getElementById(id).style.display='none'; 
+}
 
-function editUser(u){ editingUserId=u.id; document.getElementById('uname').value=u.name; document.getElementById('uage').value=u.age; document.getElementById('uemail').value=u.email; if(u.userInfo){ document.getElementById('ulist1').value=(u.userInfo.ulist1||[]).join(', '); document.getElementById('umap1').value=JSON.stringify(u.userInfo.umap1||{});} document.getElementById('userModal').style.display='flex'; }
-function editOrder(o){ editingOrderId=o.id; document.getElementById('oname').value=o.name; document.getElementById('oprice').value=o.price; const tbody=document.querySelector('#detailsTable tbody'); tbody.innerHTML=''; if(o.details){ o.details.forEach(d=>addDetailRow(d.detail1,(d.olist1||[]).join(', '))); } else { addDetailRow(); } document.getElementById('orderModal').style.display='flex'; }
+function editUser(u){ 
+    switchTab('user-basic')
+    editingUserId=u.id; 
+    document.getElementById('uname').value=u.name; 
+    document.getElementById('uage').value=u.age; 
+    document.getElementById('uemail').value=u.email; 
+    if(u.userInfo){ 
+        document.getElementById('ulist1').value=(u.userInfo.ulist1||[]).join(', '); 
+        document.getElementById('umap1').value=JSON.stringify(u.userInfo.umap1||{});
+    } document.getElementById('userModal').style.display='flex'; 
+}
+function editOrder(o){ 
+    switchTab('order-basic')
+    editingOrderId=o.id; 
+    document.getElementById('oname').value=o.name; 
+    document.getElementById('oprice').value=o.price; 
+    const tbody=document.querySelector('#detailsTable tbody'); 
+    tbody.innerHTML=''; 
+    if(o.details){ 
+        o.details.forEach(d=>addDetailRow(d.detail1,(d.olist1||[]).join(', '))); 
+    } else { 
+        addDetailRow(); 
+    } 
+    document.getElementById('orderModal').style.display='flex'; 
+}
 
-function saveUser(){ const name=document.getElementById('uname').value.trim(); const age=parseInt(document.getElementById('uage').value)||0; const email=document.getElementById('uemail').value.trim(); const ulist1=document.getElementById('ulist1').value.split(',').map(s=>s.trim()).filter(s=>s); let umap1={}; try{umap1=JSON.parse(document.getElementById('umap1').value);}catch(e){alert('umap1 必须是合法 JSON');return;} const body={ name, age, email, userInfo:{ ulist1, umap1 }}; const method=editingUserId?'PUT':'POST'; const url=editingUserId?`${apiBase}/users/${editingUserId}`:`${apiBase}/users`; fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(()=>{ closeModal('userModal'); fetchUsers(); }); }
+function saveUser(){ 
+    const name=document.getElementById('uname').value.trim(); 
+    const age=parseInt(document.getElementById('uage').value)||0; 
+    const email=document.getElementById('uemail').value.trim(); 
+    const ulist1=document.getElementById('ulist1').value.split(',').map(s=>s.trim()).filter(s=>s); 
+    let umap1={}; 
+    try{
+        umap1=JSON.parse(document.getElementById('umap1').value);
+    }catch(e){
+        alert('umap1 必须是合法 JSON');
+        return;
+    } 
+    const body={ name, age, email, userInfo:{ ulist1, umap1 }}; 
+    const method=editingUserId?'PUT':'POST'; 
+    const url=editingUserId?`${apiBase}/users/${editingUserId}`:`${apiBase}/users`; 
+    fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(()=>{ 
+        closeModal('userModal'); fetchUsers(); 
+    }); 
+}
 
-function saveOrder(){ const name=document.getElementById('oname').value.trim(); const price=parseFloat(document.getElementById('oprice').value)||0; const rows=document.querySelectorAll('#detailsTable tbody tr'); const details=[...rows].map(r=>({ detail1:r.querySelector('td:nth-child(1) input').value.trim(), olist1:r.querySelector('td:nth-child(2) input').value.split(',').map(s=>s.trim()).filter(s=>s) })); const body={ name, price, details}; const method=editingOrderId?'PUT':'POST'; const url=editingOrderId?`${apiBase}/orders/${editingOrderId}`:`${apiBase}/orders`; fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(()=>{ closeModal('orderModal'); fetchOrders(); }); }
+function saveOrder(){ 
+    const name=document.getElementById('oname').value.trim(); 
+    const price=parseFloat(document.getElementById('oprice').value)||0; 
+    const rows=document.querySelectorAll('#detailsTable tbody tr'); 
+    const details=[...rows].map(r=>({ detail1:r.querySelector('td:nth-child(1) input').value.trim(), olist1:r.querySelector('td:nth-child(2) input').value.split(',').map(s=>s.trim()).filter(s=>s) })); 
+    const body={ name, price, details}; 
+    const method=editingOrderId?'PUT':'POST'; 
+    const url=editingOrderId?`${apiBase}/orders/${editingOrderId}`:`${apiBase}/orders`; 
+    fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(()=>{ 
+        closeModal('orderModal'); fetchOrders(); 
+    }); 
+}
 
-function deleteUser(id){ if(confirm('确认删除用户?')) fetch(`${apiBase}/users/${id}`,{method:'DELETE'}).then(()=>fetchUsers()); }
-function deleteOrder(id){ if(confirm('确认删除订单?')) fetch(`${apiBase}/orders/${id}`,{method:'DELETE'}).then(()=>fetchOrders()); }
+function deleteUser(id){ 
+    if(confirm('确认删除用户?')) fetch(`${apiBase}/users/${id}`,{method:'DELETE'}).then(()=>fetchUsers()); 
+}
+function deleteOrder(id){ 
+    if(confirm('确认删除订单?')) fetch(`${apiBase}/orders/${id}`,{method:'DELETE'}).then(()=>fetchOrders()); 
+}
 
-function addDetailRow(detail='',olist=''){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input value='${detail}'></td><td><input value='${olist}'></td><td><button class='btn-remove-row btn-small' onclick='this.parentElement.parentElement.remove()'>删除</button></td>`; document.querySelector('#detailsTable tbody').appendChild(tr); }
+function addDetailRow(detail='',olist=''){ 
+    const tr=document.createElement('tr'); 
+    tr.innerHTML=`<td><input value='${detail}'></td><td><input value='${olist}'></td><td><button class='btn-remove-row btn-small' onclick='this.parentElement.parentElement.remove()'>删除</button></td>`; 
+    document.querySelector('#detailsTable tbody').appendChild(tr); 
+}
 
-function switchTab(id){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); const tab=document.querySelector(`.tab[onclick*="${id}"]`); if(tab) tab.classList.add('active'); document.getElementById(id).classList.add('active'); }
+function switchTab(id){ 
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); 
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); 
+    const tab=document.querySelector(`.tab[onclick*="${id}"]`); 
+    if(tab) tab.classList.add('active'); 
+    document.getElementById(id).classList.add('active'); 
+}
 
-document.addEventListener('DOMContentLoaded',()=>{ fetchUsers(); fetchOrders(); });
+document.addEventListener('DOMContentLoaded',()=>{ 
+    fetchUsers(); 
+    fetchOrders(); 
+});
 </script>
 </body>
 </html>
