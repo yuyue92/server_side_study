@@ -97,4 +97,5 @@ async function scrapeOne(page, url, selector) {
 ```
 
 3、用法示例：
-`node scrape_class_dynamic.js ".BorderGrid-cell" https://github.com/yuyueMidea/Python_Study https://github.com/yuyueMidea/Learn-Practice`
+- `node scrape_class_dynamic.js ".with-bookmark" https://www.w3schools.com/html/html_paragraphs.asp https://www.w3schools.com/html/html_tables.asp`
+- `node scrape_class_dynamic.js ".BorderGrid-cell" https://github.com/yuyueMidea/Python_Study https://github.com/yuyueMidea/Learn-Practice`
