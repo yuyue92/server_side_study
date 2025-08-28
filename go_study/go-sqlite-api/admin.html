@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8" />
+  <title>GoShop Admin (Pure HTML/CSS/JS)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f7f7fb; --card:#fff; --text:#1f2937; --muted:#6b7280; --brand:#111827; --brand-2:#0f172a;
+      --border:#e5e7eb; --red:#e11d48; --green:#16a34a; --blue:#2563eb; --yellow:#ca8a04;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    a{color:inherit;text-decoration:none}
+    header{position:sticky;top:0;background:rgba(255,255,255,.8);backdrop-filter:blur(6px);border-bottom:1px solid var(--border);z-index:10}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .top{display:flex;align-items:center;justify-content:space-between}
+    .brand{font-weight:900;letter-spacing:.3px}
+    .layout{display:grid;grid-template-columns:240px 1fr;gap:20px;margin-top:16px}
+    @media (max-width: 900px){ .layout{grid-template-columns:1fr} }
+    nav{display:flex;flex-direction:column;gap:8px}
+    .navlink{padding:10px 12px;border-radius:12px;border:1px solid transparent}
+    .navlink.active{background:var(--brand);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+    .navlink:not(.active):hover{background:#fff;border-color:var(--border)}
+    main{display:block}
+    h1{margin:0 0 12px 0;font-size:22px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.04);margin-bottom:16px}
+    .row{display:grid;gap:12px}
+    .row.cols-2{grid-template-columns:repeat(2,1fr)}
+    .row.cols-3{grid-template-columns:repeat(3,1fr)}
+    .row.cols-4{grid-template-columns:repeat(4,1fr)}
+    @media (max-width: 900px){ .row.cols-2,.row.cols-3,.row.cols-4{grid-template-columns:1fr} }
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 10px;outline:none}
+    input:focus,select:focus{border-color:#cbd5e1;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
+    button{border:0;border-radius:10px;background:var(--brand);color:#fff;padding:9px 14px;cursor:pointer}
+    button.ghost{background:#fff;color:var(--text);border:1px solid var(--border)}
+    button.red{background:var(--red)}
+    button.blue{background:var(--blue)}
+    button.green{background:var(--green)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .tablewrap{border:1px solid var(--border);border-radius:12px;overflow:auto;background:#fff}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead{background:#f8fafc}
+    th,td{padding:10px 12px;border-top:1px solid var(--border);text-align:left;white-space:nowrap}
+    thead th{border-top:0;color:#52525b;font-weight:600}
+    tr:hover td{background:#fafafa}
+    .muted{color:var(--muted)}
+    .right{text-align:right}
+    .pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px}
+    .pill.gray{background:#f3f4f6;color:#374151}
+    .pill.green{background:#ecfdf5;color:#166534}
+    .pill.red{background:#fef2f2;color:#991b1b}
+    .pill.blue{background:#eff6ff;color:#1e40af}
+    .pagination{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+    .total{display:inline-block;background:#0f172a;color:#fff;padding:8px 12px;border-radius:10px}
+    .hidden{display:none}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:grid;place-items:center;z-index:50}
+    /* 放在 .modal {...} 之后 */
+    .modal.hidden { display: none !important; }
+    .modal>.inner{width:min(560px,92vw);background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .modal .head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border)}
+    .modal .body{padding:14px}
+    .toast{position:fixed;bottom:16px;right:16px;display:grid;gap:8px;z-index:60}
+    .toast .t{background:#111827;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .chip{display:inline-flex;gap:6px;align-items:center}
+    .gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap top">
+      <div class="brand">GoShop Admin</div>
+      <div class="muted">纯 HTML / CSS / JS</div>
+    </div>
+  </header>
+
+  <div class="wrap layout">
+    <aside>
+      <nav id="nav">
+        <a href="#/dashboard" class="navlink">仪表盘</a>
+        <a href="#/customers" class="navlink">客户</a>
+        <a href="#/products" class="navlink">产品</a>
+        <a href="#/orders" class="navlink">订单</a>
+        <a href="#/order-new" class="navlink">新建订单</a>
+        <a href="#/payments" class="navlink">付款单</a>
+      </nav>
+    </aside>
+
+    <main id="views">
+      <!-- Dashboard -->
+      <section data-view="dashboard" class="hidden">
+        <h1>仪表盘</h1>
+        <div class="card">
+          <div class="row cols-3">
+            <div>
+              <label>开始日期</label>
+              <input type="date" id="ds-from" />
+            </div>
+            <div>
+              <label>结束日期</label>
+              <input type="date" id="ds-to" />
+            </div>
+            <div style="display:flex;align-items:end;justify-content:flex-end;">
+              <span class="total" id="ds-total">总销售额：￥0.00</span>
+            </div>
+          </div>
+        </div>
+        <div class="tablewrap">
+          <table id="ds-table">
+            <thead><tr><th>日期</th><th>销售额</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Customers -->
+      <section data-view="customers" class="hidden">
+        <h1>客户</h1>
+        <div class="card">
+          <div class="toolbar">
+            <div class="row cols-4" style="flex:1">
+              <div>
+                <label>城市</label>
+                <input type="text" id="c-city" placeholder="如 Shanghai"/>
+              </div>
+              <div>
+                <label>排序</label>
+                <select id="c-sort">
+                  <option value="id:desc">id:desc</option>
+                  <option value="id:asc">id:asc</option>
+                  <option value="name:asc">name:asc</option>
+                  <option value="name:desc">name:desc</option>
+                  <option value="created_at:desc">created_at:desc</option>
+                  <option value="created_at:asc">created_at:asc</option>
+                </select>
+              </div>
+              <div>
+                <label>页码</label>
+                <input type="number" id="c-page" value="1" min="1"/>
+              </div>
+              <div>
+                <label>每页</label>
+                <input type="number" id="c-size" value="10" min="1" max="100"/>
+              </div>
+            </div>
+            <button id="c-new">新建客户</button>
+          </div>
+          <div class="tablewrap">
+            <table id="c-table">
+              <thead><tr><th>ID</th><th>姓名</th><th>城市</th><th>创建时间</th><th>操作</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="ghost" id="c-prev">上一页</button>
+            <button class="ghost" id="c-next">下一页</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section data-view="products" class="hidden">
+        <h1>产品</h1>
+        <div class="card">
+          <div class="toolbar">
+            <div class="row cols-4" style="flex:1">
+              <div>
+                <label>品类</label>
+                <input type="text" id="p-cat" placeholder="Peripherals"/>
+              </div>
+              <div>
+                <label>排序</label>
+                <select id="p-sort">
+                  <option value="id:desc">id:desc</option>
+                  <option value="id:asc">id:asc</option>
+                  <option value="name:asc">name:asc</option>
+                  <option value="name:desc">name:desc</option>
+                </select>
+              </div>
+              <div>
+                <label>页码</label>
+                <input type="number" id="p-page" value="1" min="1"/>
+              </div>
+              <div>
+                <label>每页</label>
+                <input type="number" id="p-size" value="10" min="1" max="100"/>
+              </div>
+            </div>
+            <button id="p-new">新建产品</button>
+          </div>
+          <div class="tablewrap">
+            <table id="p-table">
+              <thead><tr><th>ID</th><th>名称</th><th>品类</th><th>操作</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="ghost" id="p-prev">上一页</button>
+            <button class="ghost" id="p-next">下一页</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Orders -->
+      <section data-view="orders" class="hidden">
+        <h1>订单</h1>
+        <div class="card">
+          <div class="toolbar">
+            <div class="row cols-4" style="flex:1">
+              <div>
+                <label>状态</label>
+                <input type="text" id="o-status" placeholder="NEW/PAID/CANCEL"/>
+              </div>
+              <div>
+                <label>客户ID</label>
+                <input type="number" id="o-cid" placeholder="数字"/>
+              </div>
+              <div>
+                <label>排序</label>
+                <select id="o-sort">
+                  <option value="order_date:desc">order_date:desc</option>
+                  <option value="order_date:asc">order_date:asc</option>
+                  <option value="id:desc">id:desc</option>
+                  <option value="id:asc">id:asc</option>
+                </select>
+              </div>
+              <div class="gap">
+                <div>
+                  <label>页码</label>
+                  <input type="number" id="o-page" value="1" min="1"/>
+                </div>
+                <div>
+                  <label>每页</label>
+                  <input type="number" id="o-size" value="10" min="1" max="100"/>
+                </div>
+              </div>
+            </div>
+            <a href="#/order-new"><button class="blue">新建订单</button></a>
+          </div>
+
+          <div class="tablewrap">
+            <table id="o-table">
+              <thead><tr><th>ID</th><th>客户ID</th><th>时间</th><th>状态</th><th class="right">金额</th><th>操作</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="ghost" id="o-prev">上一页</button>
+            <button class="ghost" id="o-next">下一页</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- New Order -->
+      <section data-view="order-new" class="hidden">
+        <h1>新建订单</h1>
+        <div class="card">
+          <div class="row cols-3">
+            <div>
+              <label>客户</label>
+              <select id="on-customer"></select>
+            </div>
+            <div>
+              <label>状态</label>
+              <select id="on-status">
+                <option value="PAID">PAID</option>
+                <option value="NEW">NEW</option>
+                <option value="CANCEL">CANCEL</option>
+              </select>
+            </div>
+            <div class="chip">
+              <label>立即付款</label>
+              <input type="checkbox" id="on-paynow" checked />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="chip"><strong>订单明细</strong></div>
+            <button id="on-add">添加一行</button>
+          </div>
+          <div id="on-items"></div>
+          <div class="right" style="margin-top:8px"><span class="total" id="on-total">合计：￥0.00</span></div>
+        </div>
+
+        <div class="card" id="on-paycard">
+          <div class="row cols-3">
+            <div>
+              <label>支付方式</label>
+              <select id="on-method">
+                <option value="CARD">CARD</option>
+                <option value="CASH">CASH</option>
+                <option value="TRANSFER">TRANSFER</option>
+              </select>
+            </div>
+            <div>
+              <label>支付金额</label>
+              <input type="number" id="on-amount" step="0.01" />
+            </div>
+          </div>
+        </div>
+
+        <div class="right">
+          <button class="green" id="on-submit">提交订单</button>
+        </div>
+      </section>
+
+      <!-- Payments -->
+      <section data-view="payments" class="hidden">
+        <h1>付款单</h1>
+        <div class="card">
+          <div class="toolbar">
+            <div class="row cols-4" style="flex:1">
+              <div>
+                <label>订单ID</label>
+                <input type="number" id="pm-oid" />
+              </div>
+              <div>
+                <label>排序</label>
+                <select id="pm-sort">
+                  <option value="id:desc">id:desc</option>
+                  <option value="id:asc">id:asc</option>
+                  <option value="paid_at:desc">paid_at:desc</option>
+                  <option value="paid_at:asc">paid_at:asc</option>
+                  <option value="amount:desc">amount:desc</option>
+                  <option value="amount:asc">amount:asc</option>
+                </select>
+              </div>
+              <div>
+                <label>页码</label>
+                <input type="number" id="pm-page" value="1" min="1" />
+              </div>
+              <div>
+                <label>每页</label>
+                <input type="number" id="pm-size" value="10" min="1" max="100"/>
+              </div>
+            </div>
+            <button id="pm-new">新增付款</button>
+          </div>
+
+          <div class="tablewrap">
+            <table id="pm-table">
+              <thead><tr><th>ID</th><th>订单ID</th><th class="right">金额</th><th>支付时间</th><th>方式</th><th>操作</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="ghost" id="pm-prev">上一页</button>
+            <button class="ghost" id="pm-next">下一页</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal & Toast -->
+  <div class="modal hidden" id="modal">
+    <div class="inner">
+      <div class="head">
+        <div id="modal-title" style="font-weight:700">Modal</div>
+        <button class="ghost" onclick="hideModal()">✕</button>
+      </div>
+      <div class="body" id="modal-body"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+/** ====== 配置 ====== **/
+const API_BASE = "http://127.0.0.1:8080/api";
+
+/** ====== 工具函数 ====== **/
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const money = (n=0) => Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = (s) => !s ? "" : new Date(s).toLocaleString();
+const qs = (obj={})=>{
+  const p=new URLSearchParams();
+  Object.entries(obj).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&String(v)!=="") p.append(k,String(v));});
+  const str=p.toString(); return str?`?${str}`:"";
+};
+function toast(msg, ms=2200){ const t=document.createElement('div'); t.className='t'; t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(), ms); }
+function showModal(title, html){ $('#modal-title').textContent=title; $('#modal-body').innerHTML=""; $('#modal-body').appendChild(html); $('#modal').classList.remove('hidden'); }
+function hideModal(){ $('#modal').classList.add('hidden'); }
+/** 简单请求封装 **/
+async function request(path, init){
+  const res = await fetch(API_BASE + path, { headers:{'Content-Type':'application/json'}, ...init });
+  if(!res.ok){
+    const text = await res.text().catch(()=>res.statusText);
+    throw new Error(`${res.status} ${res.statusText} ${text}`);
+  }
+  if(res.status===204) return null;
+  return res.json();
+}
+
+/** ====== 路由（hash） ====== **/
+const routes = ["dashboard","customers","products","orders","order-new","payments"];
+function setActiveNav(r){ $$('#nav .navlink').forEach(a=>a.classList.toggle('active', a.getAttribute('href')===`#/${r}`)); }
+function showView(r){ $$('#views > section').forEach(s=>s.classList.toggle('hidden', s.dataset.view!==r)); setActiveNav(r); }
+window.addEventListener('hashchange', ()=>{ const r=location.hash.replace(/^#\//,'')||'dashboard'; showView(r); onRoute(r); });
+document.addEventListener('DOMContentLoaded', ()=>{ if(!location.hash) location.hash="#/dashboard"; const r=location.hash.replace(/^#\//,'')||'dashboard'; showView(r); onRoute(r); });
+
+/** ====== 仪表盘 ====== **/
+async function loadDashboard(){
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const $from = $('#ds-from'), $to = $('#ds-to');
+  if(!$from.value) $from.value = start.toISOString().slice(0,10);
+  if(!$to.value) $to.value = today.toISOString().slice(0,10);
+
+  async function fetchAndRender(){
+    const data = await request(`/stats/daily-sales${qs({from:$from.value, to:$to.value})}`);
+    const tbody = $('#ds-table tbody'); tbody.innerHTML="";
+    let total=0;
+    data.forEach(r=>{
+      total += Number(r.sales||0);
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${r.date}</td><td>￥${money(r.sales)}</td>`;
+      tbody.appendChild(tr);
+    });
+    $('#ds-total').textContent = `总销售额：￥${money(total)}`;
+  }
+  $from.onchange = fetchAndRender; $to.onchange = fetchAndRender;
+  fetchAndRender().catch(e=>toast(e.message));
+}
+
+/** ====== 客户 CRUD ====== **/
+let CState = { page:1, size:10, sort:"id:desc", city:"" };
+async function loadCustomers(){
+  // 绑定控件状态
+  $('#c-page').value=CState.page; $('#c-size').value=CState.size; $('#c-sort').value=CState.sort; $('#c-city').value=CState.city;
+  async function fetchAndRender(){
+    const resp = await request(`/customers${qs(CState)}`);
+    const rows = resp.items||[];
+    const tbody = $('#c-table tbody'); tbody.innerHTML="";
+    rows.forEach(c=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.id}</td><td>${c.name}</td><td>${c.city||"-"}</td><td>${fmtDate(c.created_at)}</td>
+        <td class="gap">
+          <button class="ghost" data-edit="${c.id}">编辑</button>
+          <button class="red" data-del="${c.id}">删除</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  // 控件事件（去抖很简单）
+  $('#c-page').onchange = ()=>{ CState.page=Math.max(1, Number($('#c-page').value||1)); fetchAndRender().catch(e=>toast(e.message)); };
+  $('#c-size').onchange = ()=>{ CState.size=Math.min(100, Math.max(1, Number($('#c-size').value||10))); fetchAndRender(); };
+  $('#c-sort').onchange = ()=>{ CState.sort=$('#c-sort').value; fetchAndRender(); };
+  $('#c-city').oninput = ()=>{ CState.city=$('#c-city').value.trim(); };
+  $('#c-prev').onclick = ()=>{ if(CState.page>1){ CState.page--; $('#c-page').value=CState.page; fetchAndRender(); }};
+  $('#c-next').onclick = ()=>{ CState.page++; $('#c-page').value=CState.page; fetchAndRender(); };
+  $('#c-new').onclick = ()=> openCustomerModal();
+  $('#c-table').onclick = (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    const id = Number(btn.dataset.edit||btn.dataset.del);
+    if(btn.dataset.edit) openCustomerModal(id);
+    if(btn.dataset.del) delCustomer(id);
+  };
+  await fetchAndRender().catch(e=>toast(e.message));
+}
+function openCustomerModal(id){
+  const el=document.createElement('div');
+  el.innerHTML=`
+    <div class="row cols-2">
+      <div><label>姓名</label><input id="mc-name"/></div>
+      <div><label>城市</label><input id="mc-city"/></div>
+    </div>
+    <div class="right" style="margin-top:12px">
+      <button class="ghost" onclick="hideModal()">取消</button>
+      <button id="mc-save">保存</button>
+    </div>`;
+  showModal(id?'编辑客户':'新建客户', el);
+  async function fill(){
+    if(!id) return;
+    const c = await request(`/customers/${id}`);
+    $('#mc-name').value = c.name||""; $('#mc-city').value = c.city||"";
+  }
+  fill();
+  $('#mc-save').onclick = async ()=>{
+    const payload = { name:$('#mc-name').value.trim(), city:$('#mc-city').value.trim()||undefined };
+    try{
+      if(!payload.name) throw new Error("姓名必填");
+      if(id) await request(`/customers/${id}`, { method:"PUT", body:JSON.stringify(payload) });
+      else await request(`/customers`, { method:"POST", body:JSON.stringify(payload) });
+      hideModal(); toast("已保存"); loadCustomers();
+    }catch(e){ toast(e.message); }
+  };
+}
+async function delCustomer(id){
+  if(!confirm(`确认删除客户 #${id}？`)) return;
+  try{ await request(`/customers/${id}`,{method:"DELETE"}); toast("已删除"); loadCustomers(); }catch(e){ toast(e.message); }
+}
+
+/** ====== 产品 CRUD ====== **/
+let PState = { page:1, size:10, sort:"id:desc", category:"" };
+async function loadProducts(){
+  $('#p-page').value=PState.page; $('#p-size').value=PState.size; $('#p-sort').value=PState.sort; $('#p-cat').value=PState.category;
+  async function fetchAndRender(){
+    const resp = await request(`/products${qs(PState)}`);
+    const rows = resp.items||[];
+    const tbody = $('#p-table tbody'); tbody.innerHTML="";
+    rows.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.id}</td><td>${p.name}</td><td>${p.category||"-"}</td>
+        <td class="gap">
+          <button class="ghost" data-edit="${p.id}">编辑</button>
+          <button class="red" data-del="${p.id}">删除</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  $('#p-page').onchange = ()=>{ PState.page=Math.max(1, Number($('#p-page').value||1)); fetchAndRender(); };
+  $('#p-size').onchange = ()=>{ PState.size=Math.min(100, Math.max(1, Number($('#p-size').value||10))); fetchAndRender(); };
+  $('#p-sort').onchange = ()=>{ PState.sort=$('#p-sort').value; fetchAndRender(); };
+  $('#p-cat').oninput = ()=>{ PState.category=$('#p-cat').value.trim(); };
+  $('#p-prev').onclick = ()=>{ if(PState.page>1){ PState.page--; $('#p-page').value=PState.page; fetchAndRender(); }};
+  $('#p-next').onclick = ()=>{ PState.page++; $('#p-page').value=PState.page; fetchAndRender(); };
+  $('#p-new').onclick = ()=> openProductModal();
+  $('#p-table').onclick = (e)=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const id=Number(btn.dataset.edit||btn.dataset.del);
+    if(btn.dataset.edit) openProductModal(id);
+    if(btn.dataset.del) delProduct(id);
+  };
+  await fetchAndRender().catch(e=>toast(e.message));
+}
+function openProductModal(id){
+  const el=document.createElement('div');
+  el.innerHTML=`
+    <div class="row cols-2">
+      <div><label>名称</label><input id="mp-name"/></div>
+      <div><label>品类</label><input id="mp-cat"/></div>
+    </div>
+    <div class="right" style="margin-top:12px">
+      <button class="ghost" onclick="hideModal()">取消</button>
+      <button id="mp-save">保存</button>
+    </div>`;
+  showModal(id?'编辑产品':'新建产品', el);
+  async function fill(){
+    if(!id) return;
+    const p = await request(`/products/${id}`);
+    $('#mp-name').value=p.name||""; $('#mp-cat').value=p.category||"";
+  }
+  fill();
+  $('#mp-save').onclick = async ()=>{
+    const payload = { name:$('#mp-name').value.trim(), category:$('#mp-cat').value.trim()||undefined };
+    try{
+      if(!payload.name) throw new Error("名称必填");
+      if(id) await request(`/products/${id}`, { method:"PUT", body:JSON.stringify(payload) });
+      else await request(`/products`, { method:"POST", body:JSON.stringify(payload) });
+      hideModal(); toast("已保存"); loadProducts();
+    }catch(e){ toast(e.message); }
+  };
+}
+async function delProduct(id){
+  if(!confirm(`确认删除产品 #${id}？`)) return;
+  try{ await request(`/products/${id}`,{method:"DELETE"}); toast("已删除"); loadProducts(); }catch(e){ toast(e.message); }
+}
+
+/** ====== 订单列表 & 明细查看 & 删除 & 状态更新 ====== **/
+let OState = { page:1, size:10, sort:"order_date:desc", status:"", customer_id:"" };
+async function loadOrders(){
+  $('#o-page').value=OState.page; $('#o-size').value=OState.size; $('#o-sort').value=OState.sort;
+  $('#o-status').value=OState.status; $('#o-cid').value=OState.customer_id;
+  async function fetchAndRender(){
+    const resp = await request(`/orders${qs(OState)}`);
+    const rows = resp.items || [];
+    const tbody = $('#o-table tbody'); tbody.innerHTML="";
+    rows.forEach(o=>{
+      const pill = o.status==="PAID"?"pill green":(o.status==="NEW"?"pill blue":(o.status==="CANCEL"?"pill red":"pill gray"));
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${o.id}</td>
+        <td>${o.customer_id}</td>
+        <td>${fmtDate(o.order_date)}</td>
+        <td><span class="${pill}">${o.status}</span></td>
+        <td class="right">￥${money(o.total||0)}</td>
+        <td class="gap">
+          <button class="ghost" data-view="${o.id}">明细</button>
+          <button class="ghost" data-status="${o.id}">改状态</button>
+          <button class="red" data-del="${o.id}">删除</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  $('#o-page').onchange = ()=>{ OState.page=Math.max(1, Number($('#o-page').value||1)); fetchAndRender(); };
+  $('#o-size').onchange = ()=>{ OState.size=Math.min(100, Math.max(1, Number($('#o-size').value||10))); fetchAndRender(); };
+  $('#o-sort').onchange = ()=>{ OState.sort=$('#o-sort').value; fetchAndRender(); };
+  $('#o-status').oninput = ()=>{ OState.status=$('#o-status').value.trim().toUpperCase(); };
+  $('#o-cid').oninput = ()=>{ OState.customer_id=$('#o-cid').value.trim(); };
+  $('#o-prev').onclick = ()=>{ if(OState.page>1){ OState.page--; $('#o-page').value=OState.page; fetchAndRender(); }};
+  $('#o-next').onclick = ()=>{ OState.page++; $('#o-page').value=OState.page; fetchAndRender(); };
+  $('#o-table').onclick = async (e)=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const id=Number(btn.dataset.view||btn.dataset.del||btn.dataset.status);
+    if(btn.dataset.view) openOrderDetail(id);
+    if(btn.dataset.del) delOrder(id);
+    if(btn.dataset.status) changeOrderStatus(id);
+  };
+  await fetchAndRender().catch(e=>toast(e.message));
+}
+async function openOrderDetail(id){
+  const o = await request(`/orders/${id}`);
+  const items = await request(`/orders/${id}/items`);
+  const el=document.createElement('div');
+  const pill = o.status==="PAID"?"pill green":(o.status==="NEW"?"pill blue":(o.status==="CANCEL"?"pill red":"pill gray"));
+  el.innerHTML = `
+    <div class="muted" style="margin-bottom:8px">
+      客户ID：<b>${o.customer_id}</b> ｜ 时间：${fmtDate(o.order_date)} ｜ 状态：<span class="${pill}">${o.status}</span> ｜ 金额：￥${money(o.total)}
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>商品ID</th><th>数量</th><th>单价</th><th>小计</th></tr></thead>
+        <tbody id="od-body"></tbody>
+      </table>
+    </div>`;
+  showModal(`订单 #${id} 明细`, el);
+  const tbody = $('#od-body');
+  items.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${it.product_id}</td><td>${it.quantity}</td><td>￥${money(it.unit_price)}</td><td>￥${money(it.quantity*it.unit_price)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+async function delOrder(id){
+  if(!confirm(`确认删除订单 #${id}（会级联删除明细与付款）？`)) return;
+  try{ await request(`/orders/${id}`,{method:"DELETE"}); toast("已删除"); loadOrders(); }catch(e){ toast(e.message); }
+}
+function changeOrderStatus(id){
+  const el=document.createElement('div');
+  el.innerHTML=`
+    <div><label>新状态</label>
+      <select id="us-status">
+        <option value="NEW">NEW</option>
+        <option value="PAID">PAID</option>
+        <option value="CANCEL">CANCEL</option>
+      </select>
+    </div>
+    <div class="right" style="margin-top:12px">
+      <button class="ghost" onclick="hideModal()">取消</button>
+      <button id="us-save">保存</button>
+    </div>`;
+  showModal(`订单 #${id} 改状态`, el);
+  $('#us-save').onclick = async ()=>{
+    try{ await request(`/orders/${id}`, { method:"PUT", body:JSON.stringify({status:$('#us-status').value}) });
+      hideModal(); toast("已更新"); loadOrders(); }catch(e){ toast(e.message); }
+  };
+}
+
+/** ====== 新建订单 ====== **/
+let OPTS = { customers:[], products:[] };
+async function loadOrderNew(){
+  // 拉取下拉选项（取前100条简化）
+  const [cs, ps] = await Promise.all([
+    request(`/customers${qs({page:1,size:100,sort:"id:desc"})}`),
+    request(`/products${qs({page:1,size:100,sort:"id:desc"})}`)
+  ]);
+  OPTS.customers = cs.items||[]; OPTS.products = ps.items||[];
+  const $selC = $('#on-customer'); $selC.innerHTML = `<option value="">请选择客户</option>` + OPTS.customers.map(c=>`<option value="${c.id}">${c.id} - ${c.name}（${c.city||"—"}）</option>`).join('');
+  // 明细行
+  const $items = $('#on-items'), $total = $('#on-total'), $amount = $('#on-amount'), $paynow = $('#on-paynow'), $paycard = $('#on-paycard');
+  function addRow(it={product_id:"", quantity:1, unit_price:0}){
+    const row=document.createElement('div'); row.className='row cols-4'; row.style.marginBottom='10px';
+    row.innerHTML = `
+      <div><label>商品</label>
+        <select class="on-pid">
+          <option value="">请选择商品</option>${OPTS.products.map(p=>`<option value="${p.id}">${p.id} - ${p.name}（${p.category||"—"}）</option>`).join('')}
+        </select>
+      </div>
+      <div><label>数量</label><input type="number" class="on-qty" min="1" value="${it.quantity}"/></div>
+      <div><label>单价</label><input type="number" class="on-price" min="0" step="0.01" value="${it.unit_price}"/></div>
+      <div style="display:flex;align-items:end;justify-content:space-between">
+        <div class="pill gray">小计：<span class="on-sub">￥0.00</span></div>
+        <button class="red on-del">删除</button>
+      </div>`;
+    $items.appendChild(row);
+    const pid = $('.on-pid', row), qty = $('.on-qty', row), price = $('.on-price', row), sub = $('.on-sub', row), del = $('.on-del', row);
+    pid.value = it.product_id||"";
+    function recompute(){
+      const q = Number(qty.value||0), p = Number(price.value||0);
+      sub.textContent = '￥'+money(q*p);
+      computeTotal();
+    }
+    [pid,qty,price].forEach(i=> i.addEventListener('change',recompute));
+    del.onclick=()=>{ row.remove(); computeTotal(); };
+    recompute();
+  }
+  function computeTotal(){
+    let t=0; $$('#on-items .row').forEach(row=>{
+      const q=Number($('.on-qty',row).value||0), p=Number($('.on-price',row).value||0);
+      t += q*p;
+    });
+    $total.textContent = '合计：￥'+money(t);
+    $amount.value = t.toFixed(2);
+  }
+  $('#on-add').onclick = ()=> addRow();
+  $paynow.onchange = ()=>{ $paycard.style.display = $paynow.checked ? 'block':'none'; };
+
+  // 初始化
+  $items.innerHTML=""; addRow(); computeTotal(); $paycard.style.display='block'; $amount.value="0.00";
+  // 提交
+  $('#on-submit').onclick = async ()=>{
+    const customer_id = Number($('#on-customer').value||0);
+    const status = $('#on-status').value;
+    if(!customer_id){ toast("请选择客户"); return; }
+    const items=[]; $$('#on-items .row').forEach(row=>{
+      const product_id = Number($('.on-pid',row).value||0);
+      const quantity = Number($('.on-qty',row).value||0);
+      const unit_price = Number($('.on-price',row).value||0);
+      if(product_id && quantity>0) items.push({product_id, quantity, unit_price});
+    });
+    if(items.length===0){ toast("请至少添加一条有效明细"); return; }
+    const body = { customer_id, status, items };
+    if($paynow.checked) body.payment = { amount:Number($('#on-amount').value||0), method:$('#on-method').value };
+    try{
+      const res = await request(`/orders`, { method:"POST", body:JSON.stringify(body) });
+      toast(`创建成功：订单 #${res.id} 金额￥${money(res.total)}`);
+      location.hash = "#/orders";
+    }catch(e){ toast(e.message); }
+  };
+}
+
+/** ====== 付款单 ====== **/
+let PMState = { page:1, size:10, sort:"id:desc", order_id:"" };
+async function loadPayments(){
+  $('#pm-page').value=PMState.page; $('#pm-size').value=PMState.size; $('#pm-sort').value=PMState.sort; $('#pm-oid').value=PMState.order_id;
+  async function fetchAndRender(){
+    const resp = await request(`/payments${qs(PMState)}`);
+    const rows = resp.items||[];
+    const tbody = $('#pm-table tbody'); tbody.innerHTML="";
+    rows.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.id}</td><td>${p.order_id}</td>
+        <td class="right">￥${money(p.amount)}</td><td>${fmtDate(p.paid_at)}</td><td>${p.method||"-"}</td>
+        <td class="gap"><button class="red" data-del="${p.id}">删除</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  $('#pm-page').onchange = ()=>{ PMState.page=Math.max(1, Number($('#pm-page').value||1)); fetchAndRender(); };
+  $('#pm-size').onchange = ()=>{ PMState.size=Math.min(100, Math.max(1, Number($('#pm-size').value||10))); fetchAndRender(); };
+  $('#pm-sort').onchange = ()=>{ PMState.sort=$('#pm-sort').value; fetchAndRender(); };
+  $('#pm-oid').oninput = ()=>{ PMState.order_id=$('#pm-oid').value.trim(); };
+  $('#pm-prev').onclick = ()=>{ if(PMState.page>1){ PMState.page--; $('#pm-page').value=PMState.page; fetchAndRender(); }};
+  $('#pm-next').onclick = ()=>{ PMState.page++; $('#pm-page').value=PMState.page; fetchAndRender(); };
+  $('#pm-table').onclick = (e)=>{ const btn=e.target.closest('button'); if(!btn) return; if(btn.dataset.del){ delPayment(Number(btn.dataset.del)); } };
+  $('#pm-new').onclick = ()=> openPaymentModal();
+  await fetchAndRender().catch(e=>toast(e.message));
+}
+function openPaymentModal(){
+  const el=document.createElement('div');
+  el.innerHTML=`
+    <div class="row cols-3">
+      <div><label>订单ID</label><input id="mpm-oid" type="number"/></div>
+      <div><label>金额</label><input id="mpm-amt" type="number" step="0.01"/></div>
+      <div><label>方式</label>
+        <select id="mpm-mtd">
+          <option value="">（可选）</option>
+          <option value="CARD">CARD</option>
+          <option value="CASH">CASH</option>
+          <option value="TRANSFER">TRANSFER</option>
+        </select>
+      </div>
+    </div>
+    <div class="right" style="margin-top:12px">
+      <button class="ghost" onclick="hideModal()">取消</button>
+      <button id="mpm-save">保存</button>
+    </div>`;
+  showModal('新增付款', el);
+  $('#mpm-save').onclick = async ()=>{
+    const order_id=Number($('#mpm-oid').value||0), amount=Number($('#mpm-amt').value||0), method=$('#mpm-mtd').value||undefined;
+    if(!order_id||amount<=0){ toast("订单ID与金额必填"); return; }
+    try{ await request(`/payments`,{method:"POST", body:JSON.stringify({order_id, amount, method})}); hideModal(); toast("已新增"); loadPayments(); }catch(e){ toast(e.message); }
+  };
+}
+async function delPayment(id){
+  if(!confirm(`确认删除付款 #${id}？`)) return;
+  try{ await request(`/payments/${id}`,{method:"DELETE"}); toast("已删除"); loadPayments(); }catch(e){ toast(e.message); }
+}
+
+/** ====== 路由进入时加载 ====== **/
+function onRoute(r){
+  if(r==="dashboard") loadDashboard();
+  if(r==="customers") loadCustomers();
+  if(r==="products") loadProducts();
+  if(r==="orders") loadOrders();
+  if(r==="order-new") loadOrderNew();
+  if(r==="payments") loadPayments();
+}
+</script>
+</body>
+</html>
