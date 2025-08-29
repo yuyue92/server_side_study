@@ -1,3 +1,12 @@
+启动：
+```
+# 1) 初始化依赖
+go mod tidy
+
+# 2) 运行服务（默认 :8080，SQLite 文件 pm.db）
+go run .
+```
+
 **API 速览**
 - Projects
 - POST /projects
