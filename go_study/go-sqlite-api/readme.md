@@ -1,3 +1,18 @@
+**运行步骤**
+```
+# 1) 初始化模块
+mkdir go-sqlite-api && cd go-sqlite-api
+go mod init example.com/go-sqlite-api
+
+# 2) 把下面 main.go 保存到当前目录
+# 3) 拉取依赖
+go get github.com/go-chi/chi/v5 github.com/go-chi/cors modernc.org/sqlite
+
+# 4) 运行
+go run .   # 默认 http://127.0.0.1:8080
+```
+
+
 **API 速览**
 - 健康检查：GET /api/health
 - 客户：GET/POST /api/customers；GET/PUT/DELETE /api/customers/{id}
