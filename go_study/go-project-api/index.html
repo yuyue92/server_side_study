@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>项目与任务 · 前端管理台</title>
+<style>
+:root{
+  /* Bootstrap-like palette */
+  --bs-body-bg:#f8f9fa;
+  --bs-body-color:#212529;
+  --bs-border:#dee2e6;
+  --bs-primary:#0d6efd;
+  --bs-primary-hover:#0b5ed7;
+  --bs-secondary:#6c757d;
+  --bs-success:#198754;
+  --bs-success-100:#d1e7dd;
+  --bs-success-800:#0f5132;
+  --bs-warning:#ffc107;
+  --bs-warning-100:#fff3cd;
+  --bs-warning-800:#664d03;
+  --bs-danger:#dc3545;
+  --bs-danger-100:#f8d7da;
+  --bs-danger-800:#842029;
+  --bs-info:#0dcaf0;
+  --bs-info-100:#cff4fc;
+  --bs-info-800:#055160;
+  --bs-primary-100:#cfe2ff;
+  --bs-primary-800:#084298;
+  --radius:.5rem;
+  --shadow-sm:0 .125rem .25rem rgba(0,0,0,.075);
+  --shadow:0 .5rem 1rem rgba(0,0,0,.15);
+  --gap:.75rem;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
+  color:var(--bs-body-color); background:var(--bs-body-bg);
+}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:16px}
+.row{display:flex;gap:var(--gap);flex-wrap:wrap;align-items:center}
+h1{font-size:20px;margin:0 12px 0 0; letter-spacing:.2px}
+a{color:var(--bs-primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+header{
+  position:sticky; top:0; z-index:5; background:#fff;
+  border-bottom:1px solid var(--bs-border); box-shadow:var(--shadow-sm);
+}
+kbd{background:#e9ecef;color:#495057;border:1px solid var(--bs-border);padding:2px 6px;border-radius:.375rem}
+
+.badge{
+  display:inline-flex;align-items:center;gap:6px;padding:.35em .65em;border-radius:.375rem;
+  background:#e9ecef;color:#495057;border:1px solid var(--bs-border)
+}
+
+/* Cards */
+.card{
+  background:#fff;border:1px solid var(--bs-border); border-radius:var(--radius); box-shadow:var(--shadow-sm);
+}
+.toolbar{
+  display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap;
+  padding:14px;border-bottom:1px solid var(--bs-border); background:#fff;border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)
+}
+.tools-right{margin-left:auto;display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
+
+/* Inputs */
+.input, select, textarea{
+  background:#fff;border:1px solid #ced4da; color:var(--bs-body-color);
+  padding:.375rem .75rem;border-radius:.375rem; outline:none; min-height:38px;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.input::placeholder{color:#6c757d}
+.input:focus, select:focus, textarea:focus{
+  border-color:var(--bs-primary);
+  box-shadow:0 0 0 .25rem rgba(13,110,253,.25);
+}
+
+/* Buttons (Bootstrap-like) */
+.button{
+  display:inline-block; font-weight:500; color:#fff; background:var(--bs-primary);
+  border:1px solid var(--bs-primary); padding:.375rem .75rem; border-radius:.375rem; cursor:pointer;
+  transition:background-color .15s ease, border-color .15s ease, transform .06s ease;
+}
+.button:hover{background:var(--bs-primary-hover); border-color:var(--bs-primary-hover)}
+.button:active{transform:translateY(1px)}
+.button.small{padding:.25rem .5rem;border-radius:.25rem;font-size:13px}
+
+.button.ghost{background:transparent;color:var(--bs-secondary);border:1px solid var(--bs-secondary)}
+.button.ghost:hover{background:var(--bs-secondary);color:#fff}
+
+.button.warn{background:var(--bs-warning);border-color:var(--bs-warning);color:#212529}
+.button.warn:hover{background:#e0ac07;border-color:#e0ac07}
+.button.danger{background:var(--bs-danger);border-color:var(--bs-danger)}
+.button.danger:hover{background:#bb2d3b;border-color:#bb2d3b}
+.button.ok{background:var(--bs-success);border-color:var(--bs-success)}
+.button.ok:hover{background:#157347;border-color:#157347}
+
+/* Tabs (nav-tabs style) */
+.tabs{display:flex;gap:6px;padding:10px 10px 0;border-bottom:1px solid var(--bs-border);background:#fff}
+.tab{
+  padding:.5rem 1rem;border:1px solid transparent;border-radius:.375rem .375rem 0 0; cursor:pointer; color:#495057;
+}
+.tab.active{
+  background:#fff;border-color:var(--bs-border); border-bottom-color:#fff; color:#000;
+}
+
+/* Tables */
+.table-wrap{overflow:auto; max-height:62vh}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.75rem;border-bottom:1px solid var(--bs-border);vertical-align:top}
+th{
+  position:sticky;top:0;background:#f1f3f5;z-index:1;text-align:left;font-weight:600;color:#495057
+}
+tbody tr:nth-child(odd){background:#fafbfc}
+tbody tr:hover{background:#eef3ff}
+
+/* Status & Priority pills (light badges) */
+.status{display:inline-block;padding:.25rem .5rem;border-radius:999px;border:1px solid var(--bs-border);font-weight:600}
+.status.planned{background:#e9ecef;color:#6c757d}
+.status.active{background:var(--bs-success-100);color:var(--bs-success-800)}
+.status.paused{background:var(--bs-warning-100);color:var(--bs-warning-800)}
+.status.completed{background:var(--bs-primary-100);color:var(--bs-primary-800)}
+.status.canceled{background:var(--bs-danger-100);color:var(--bs-danger-800)}
+.status.todo{background:#e9ecef;color:#6c757d}
+.status.doing{background:var(--bs-info-100);color:var(--bs-info-800)}
+.status.done{background:var(--bs-success-100);color:var(--bs-success-800)}
+.status.blocked{background:var(--bs-danger-100);color:var(--bs-danger-800)}
+.priority.low{color:#6c757d}
+.priority.medium{color:#fd7e14}
+.priority.high{color:var(--bs-danger)}
+.priority.urgent{color:#b21f2d}
+
+/* Pager */
+.pager{display:flex;gap:8px;align-items:center;padding:12px;border-top:1px solid var(--bs-border);background:#fff;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:.25rem .5rem;border-radius:999px;background:#f1f3f5;border:1px solid var(--bs-border)}
+.meta{color:#6c757d}
+
+/* Toast */
+.toast{position:fixed;right:18px;bottom:18px;z-index:20;display:flex;flex-direction:column;gap:10px}
+.toast .t{padding:.5rem .75rem;border-radius:.5rem;background:#fff;border:1px solid var(--bs-border);box-shadow:var(--shadow-sm);color:#212529}
+.t.ok{border-left:4px solid var(--bs-success)}
+.t.err{border-left:4px solid var(--bs-danger)}
+
+/* Modal */
+.modal{
+  position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.4);z-index:30;
+}
+.modal[data-open="1"]{display:grid}
+.modal .panel{
+  width:min(760px,92vw);background:#fff;border:1px solid var(--bs-border);border-radius:.75rem;box-shadow:var(--shadow)
+}
+.panel header{display:flex;align-items:center;justify-content:space-between;padding:.75rem .875rem;border-bottom:1px solid var(--bs-border)}
+.panel .body{padding:14px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.col-6{grid-column:span 6}
+.col-4{grid-column:span 4}
+.col-3{grid-column:span 3}
+.col-12{grid-column:span 12}
+.form-row{display:flex;flex-direction:column;gap:6px}
+label{color:#495057;font-weight:500}
+
+.api-box{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--bs-border);padding:6px 8px;border-radius:.375rem}
+.api-box input{all:unset;background:transparent;color:#212529}
+.help{color:#6c757d}
+hr.sep{border:0;border-top:1px solid var(--bs-border);margin:10px 0}
+footer.tip{color:#6c757d;opacity:.95;padding:16px 0 60px}
+</style>
+
+</head>
+<body>
+<header>
+  <div class="container row">
+    <h1>项目与任务（HTML+CSS+JS）</h1>
+    <span class="badge">后端 <kbd>Go</kbd> + <kbd>SQLite</kbd></span>
+    <div class="tools-right">
+      <div class="api-box">
+        <span class="help">API：</span>
+        <input id="apiBase" placeholder="http://localhost:8080" size="28" />
+        <button class="button small ghost" id="saveApi">保存</button>
+      </div>
+      <button class="button small ghost" id="seedBtn" title="创建少量示例数据，便于测试">一键示例数据</button>
+      <a class="button small" href="#docs" id="openDocs">API 速览</a>
+    </div>
+  </div>
+  <div class="container tabs">
+    <div class="tab active" data-tab="projects">项目</div>
+    <div class="tab" data-tab="tasks">任务</div>
+  </div>
+</header>
+
+<main class="container" style="margin-top:10px">
+  <!-- PROJECTS -->
+  <section id="view-projects" class="card">
+    <div class="toolbar">
+      <input class="input" id="p-q" placeholder="按项目名搜索…" />
+      <select id="p-status">
+        <option value="">状态（全部）</option>
+        <option>planned</option><option>active</option><option>paused</option>
+        <option>completed</option><option>canceled</option>
+      </select>
+      <input class="input" id="p-manager" placeholder="负责人ID（可选）" style="width:160px" />
+      <input class="input" id="p-client" placeholder="客户ID（可选）" style="width:160px" />
+      <select id="p-sort">
+        <option value="created_at desc">按创建时间（新→旧）</option>
+        <option value="created_at asc">按创建时间（旧→新）</option>
+        <option value="deadline asc">按截止时间（近→远）</option>
+        <option value="deadline desc">按截止时间（远→近）</option>
+        <option value="name asc">按名称（A→Z）</option>
+        <option value="name desc">按名称（Z→A）</option>
+      </select>
+      <div class="tools-right">
+        <span class="help">每页</span>
+        <select id="p-limit"><option>10</option><option selected>20</option><option>50</option></select>
+        <button class="button ghost" id="p-refresh">刷新</button>
+        <button class="button" id="p-new">新建项目</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="p-table"><thead>
+        <tr>
+          <th>ID</th><th>名称</th><th>状态</th><th>预算</th><th>起止</th><th>创建时间</th><th>操作</th>
+        </tr>
+      </thead><tbody></tbody></table>
+    </div>
+    <div class="pager">
+      <button class="button small ghost" id="p-prev">上一页</button>
+      <div class="pill"><span class="meta" id="p-meta">0–0 / 0</span></div>
+      <button class="button small ghost" id="p-next">下一页</button>
+    </div>
+  </section>
+
+  <!-- TASKS -->
+  <section id="view-tasks" class="card" style="margin-top:16px; display:none">
+    <div class="toolbar">
+      <input class="input" id="t-q" placeholder="按任务名搜索…" />
+      <input class="input" id="t-project" placeholder="项目ID（留空=全部项目）" style="width:160px" />
+      <select id="t-status">
+        <option value="">状态（全部）</option>
+        <option>todo</option><option>doing</option><option>done</option><option>blocked</option>
+      </select>
+      <select id="t-priority">
+        <option value="">优先级（全部）</option>
+        <option>low</option><option>medium</option><option>high</option><option>urgent</option>
+      </select>
+      <input class="input" id="t-assignee" placeholder="执行人ID（可选）" style="width:160px" />
+      <input class="input" id="t-after" type="date" title="到期日期>=（含）" />
+      <input class="input" id="t-before" type="date" title="到期日期<=（含）" />
+      <select id="t-sort">
+        <option value="created_at desc">按创建时间（新→旧）</option>
+        <option value="due_date asc">按到期（近→远）</option>
+        <option value="due_date desc">按到期（远→近）</option>
+        <option value="task_name asc">按名称（A→Z）</option>
+        <option value="task_name desc">按名称（Z→A）</option>
+      </select>
+      <div class="tools-right">
+        <span class="help">每页</span>
+        <select id="t-limit"><option>10</option><option selected>20</option><option>50</option></select>
+        <button class="button ghost" id="t-refresh">刷新</button>
+        <button class="button" id="t-new">新建任务</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="t-table"><thead>
+        <tr>
+          <th>ID</th><th>项目ID</th><th>任务名</th><th>状态</th><th>优先级</th>
+          <th>工时(预/实)</th><th>到期</th><th>创建时间</th><th>操作</th>
+        </tr>
+      </thead><tbody></tbody></table>
+    </div>
+    <div class="pager">
+      <button class="button small ghost" id="t-prev">上一页</button>
+      <div class="pill"><span class="meta" id="t-meta">0–0 / 0</span></div>
+      <button class="button small ghost" id="t-next">下一页</button>
+    </div>
+  </section>
+
+  <footer class="tip">
+    提示：如果你修改了 API 地址，右上角“保存”后再点击“刷新”。删除项目会**级联删除**其任务（后端已开启外键）。
+  </footer>
+</main>
+
+<!-- 统一弹窗：项目表单 -->
+<div class="modal" id="modal-project" data-open="0" aria-hidden="true">
+  <div class="panel">
+    <header>
+      <strong id="mp-title">新建项目</strong>
+      <button class="button small ghost" data-close="#modal-project">关闭</button>
+    </header>
+    <div class="body">
+      <form id="mp-form" class="grid">
+        <input type="hidden" name="sqlid" />
+        <div class="col-6 form-row">
+          <label>项目名称*</label>
+          <input class="input" name="name" required placeholder="例如：Go 后端重构" />
+        </div>
+        <div class="col-6 form-row">
+          <label>状态*</label>
+          <select name="status" class="input" required>
+            <option>planned</option><option>active</option><option>paused</option><option>completed</option><option>canceled</option>
+          </select>
+        </div>
+        <div class="col-12 form-row">
+          <label>描述</label>
+          <textarea class="input" name="description" rows="3" placeholder="可选"></textarea>
+        </div>
+        <div class="col-3 form-row"><label>负责人ID</label><input class="input" name="project_manager_id" inputmode="numeric" /></div>
+        <div class="col-3 form-row"><label>客户ID</label><input class="input" name="client_id" inputmode="numeric" /></div>
+        <div class="col-3 form-row"><label>预算</label><input class="input" name="budget" inputmode="decimal" placeholder="数字" /></div>
+        <div class="col-3 form-row"><label>开始日期</label><input class="input" type="date" name="start_date" /></div>
+        <div class="col-3 form-row"><label>截止日期</label><input class="input" type="date" name="deadline" /></div>
+        <div class="col-12">
+          <hr class="sep" />
+          <button class="button" type="submit">保存</button>
+          <button class="button ghost" type="button" data-close="#modal-project">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 统一弹窗：任务表单 -->
+<div class="modal" id="modal-task" data-open="0" aria-hidden="true">
+  <div class="panel">
+    <header>
+      <strong id="mt-title">新建任务</strong>
+      <button class="button small ghost" data-close="#modal-task">关闭</button>
+    </header>
+    <div class="body">
+      <form id="mt-form" class="grid">
+        <input type="hidden" name="sqlid" />
+        <div class="col-4 form-row"><label>项目ID*</label><input class="input" name="sqlproject_id" required inputmode="numeric" /></div>
+        <div class="col-8 form-row"><label>任务名*</label><input class="input" name="task_name" required /></div>
+        <div class="col-12 form-row"><label>描述</label><textarea class="input" name="description" rows="3"></textarea></div>
+        <div class="col-3 form-row"><label>执行人ID</label><input class="input" name="assignee_id" inputmode="numeric" /></div>
+        <div class="col-3 form-row"><label>优先级</label>
+          <select class="input" name="priority"><option value="">（空）</option><option>low</option><option>medium</option><option>high</option><option>urgent</option></select>
+        </div>
+        <div class="col-3 form-row"><label>预估工时</label><input class="input" name="estimated_hours" inputmode="decimal" /></div>
+        <div class="col-3 form-row"><label>实际工时</label><input class="input" name="actual_hours" inputmode="decimal" /></div>
+        <div class="col-4 form-row"><label>状态*</label>
+          <select class="input" name="status" required><option>todo</option><option>doing</option><option>done</option><option>blocked</option></select>
+        </div>
+        <div class="col-4 form-row"><label>到期日</label><input class="input" type="date" name="due_date" /></div>
+        <div class="col-12">
+          <hr class="sep" />
+          <button class="button" type="submit">保存</button>
+          <button class="button ghost" type="button" data-close="#modal-task">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 轻提示 -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========================= 基础工具 ========================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const toISO = d => d ? String(d).slice(0,10) : "";
+const int = v => v===""||v==null ? null : Number.parseInt(v,10);
+const num = v => v===""||v==null ? null : Number.parseFloat(v);
+const str = v => (v===""||v==null) ? null : String(v);
+const fmtMoney = v => (v==null || v==="" || isNaN(v)) ? "—" : Number(v).toLocaleString(undefined,{maximumFractionDigits:2});
+const fmtRange = (a,b) => (a||b) ? `${a||"?"} → ${b||"?"}` : "—";
+
+const toastBox = $("#toast");
+function toast(msg, ok=true){
+  const t = document.createElement("div");
+  t.className = "t " + (ok?"ok":"err");
+  t.textContent = msg;
+  toastBox.appendChild(t);
+  setTimeout(()=>{ t.remove(); }, 3000);
+}
+
+function modalOpen(id){
+  const m = $(id);
+  if(!m) return;
+  m.setAttribute("data-open","1");
+  m.setAttribute("aria-hidden","false");
+}
+function modalClose(id){
+  const m = $(id);
+  if(!m) return;
+  m.setAttribute("data-open","0");
+  m.setAttribute("aria-hidden","true");
+}
+document.addEventListener("click", e=>{
+  const btn = e.target.closest("[data-close]");
+  if(btn){ modalClose(btn.getAttribute("data-close")); }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ $$(".modal[data-open='1']").forEach(m=>modalClose("#"+m.id)); }
+});
+
+/* ========================= API 封装 ========================= */
+const Api = {
+  get base(){ return localStorage.getItem("apiBase") || "http://localhost:8080"; },
+  set base(v){ localStorage.setItem("apiBase", v); },
+
+  async request(path, opt={}){
+    const res = await fetch(this.base + path, {
+      ...opt,
+      headers: { "Content-Type":"application/json", ...(opt.headers||{}) },
+    });
+    if(!res.ok){
+      let info = "";
+      try{ const j = await res.json(); info = j.error || JSON.stringify(j); }catch{}
+      throw new Error(`${res.status} ${res.statusText}${info?": "+info:""}`);
+    }
+    if(res.status===204) return null;
+    return await res.json();
+  },
+
+  // Projects
+  listProjects(params={}){
+    const qs = new URLSearchParams(params);
+    return this.request(`/projects?${qs.toString()}`);
+  },
+  getProject(id){ return this.request(`/projects/${id}`); },
+  createProject(data){ return this.request(`/projects`, {method:"POST", body:JSON.stringify(data)}); },
+  updateProject(id,data){ return this.request(`/projects/${id}`, {method:"PUT", body:JSON.stringify(data)}); },
+  patchProjectStatus(id,status){ return this.request(`/projects/${id}/status`, {method:"PATCH", body:JSON.stringify({status})}); },
+  deleteProject(id){ return this.request(`/projects/${id}`, {method:"DELETE"}); },
+
+  // Tasks
+  listTasks(params={}){
+    const qs = new URLSearchParams(params);
+    return this.request(`/tasks?${qs.toString()}`);
+  },
+  getTask(id){ return this.request(`/tasks/${id}`); },
+  createTask(data, projectId){
+    if(projectId){ return this.request(`/projects/${projectId}/tasks`, {method:"POST", body:JSON.stringify(data)}); }
+    return this.request(`/tasks`, {method:"POST", body:JSON.stringify(data)});
+  },
+  updateTask(id,data){ return this.request(`/tasks/${id}`, {method:"PUT", body:JSON.stringify(data)}); },
+  patchTaskStatus(id,status){ return this.request(`/tasks/${id}/status`, {method:"PATCH", body:JSON.stringify({status})}); },
+  deleteTask(id){ return this.request(`/tasks/${id}`, {method:"DELETE"}); },
+};
+
+/* ========================= 头部：API 地址 & Tabs ========================= */
+const apiInput = $("#apiBase");
+apiInput.value = Api.base;
+$("#saveApi").addEventListener("click", ()=>{
+  Api.base = apiInput.value.trim().replace(/\/+$/,'');
+  toast("API 地址已保存：" + Api.base);
+});
+$("#openDocs").addEventListener("click", (e)=>{
+  e.preventDefault();
+  alert(`后端 API 速览：
+GET    /projects
+POST   /projects
+GET    /projects/{id}
+PUT    /projects/{id}
+PATCH  /projects/{id}/status
+DELETE /projects/{id}
+GET    /projects/{id}/tasks
+POST   /projects/{id}/tasks
+
+GET    /tasks
+POST   /tasks
+GET    /tasks/{id}
+PUT    /tasks/{id}
+PATCH  /tasks/{id}/status
+DELETE /tasks/{id}
+`);
+});
+
+const tabs = $$(".tab");
+tabs.forEach(t=>t.addEventListener("click", ()=>{
+  tabs.forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const key = t.dataset.tab;
+  $("#view-projects").style.display = (key==="projects"?"block":"none");
+  $("#view-tasks").style.display = (key==="tasks"?"block":"none");
+}));
+
+/* ========================= 项目：列表/分页/表单 ========================= */
+const P = {
+  state: {offset:0, limit:20, total:0},
+  els: {
+    q: $("#p-q"), status: $("#p-status"), manager: $("#p-manager"), client: $("#p-client"),
+    sort: $("#p-sort"), limit: $("#p-limit"), refresh: $("#p-refresh"), table: $("#p-table tbody"),
+    meta: $("#p-meta"), prev: $("#p-prev"), next: $("#p-next"), btnNew: $("#p-new")
+  },
+  qs(){
+    return {
+      q: P.els.q.value.trim() || "",
+      status: P.els.status.value || "",
+      project_manager_id: P.els.manager.value.trim(),
+      client_id: P.els.client.value.trim(),
+      sort: P.els.sort.value,
+      limit: P.state.limit,
+      offset: P.state.offset
+    };
+  },
+  async load(){
+    try{
+      const data = await Api.listProjects(P.qs());
+      const items = data.items||[];
+      P.state.total = P.state.offset + items.length + ((items.length===P.state.limit)? P.state.limit : 0); // 仅用于大致显示
+      P.render(items);
+      P.els.meta.textContent = `${P.state.offset+1}-${P.state.offset+items.length} / ≥${P.state.offset+items.length}`;
+    }catch(err){
+      toast("加载项目失败："+err.message,false);
+    }
+  },
+  render(list){
+    const tbody = P.els.table;
+    tbody.innerHTML = list.map(p=>{
+      const status = `<span class="status ${p.status}">${p.status}</span>`;
+      const time = (p.created_at||"").replace("T"," ").replace("Z","");
+      const range = fmtRange(p.start_date, p.deadline);
+      return `<tr>
+        <td>${p.sqlid}</td>
+        <td><strong>${p.name||""}</strong><br><small class="help">${p.description||""}</small></td>
+        <td>${status}</td>
+        <td>${fmtMoney(p.budget)}</td>
+        <td>${range}</td>
+        <td><small>${time}</small></td>
+        <td>
+          <div class="row">
+            <button class="button small ghost" data-p-viewtasks="${p.sqlid}">查看任务</button>
+            <button class="button small ghost" data-p-edit='${JSON.stringify(p)}'>编辑</button>
+            <select class="input" style="min-height:30px" data-p-status="${p.sqlid}">
+              <option ${p.status==="planned"?"selected":""}>planned</option>
+              <option ${p.status==="active"?"selected":""}>active</option>
+              <option ${p.status==="paused"?"selected":""}>paused</option>
+              <option ${p.status==="completed"?"selected":""}>completed</option>
+              <option ${p.status==="canceled"?"selected":""}>canceled</option>
+            </select>
+            <button class="button small danger" data-p-del="${p.sqlid}">删除</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("");
+  },
+  bind(){
+    ["change","keyup"].forEach(ev=>{
+      [P.els.q, P.els.status, P.els.manager, P.els.client, P.els.sort].forEach(el=>{
+        el.addEventListener(ev, ()=>{ P.state.offset=0; P.state.limit=Number(P.els.limit.value); P.load(); });
+      });
+    });
+    P.els.limit.addEventListener("change", ()=>{ P.state.limit=Number(P.els.limit.value); P.state.offset=0; P.load(); });
+    P.els.refresh.addEventListener("click", ()=>P.load());
+    P.els.prev.addEventListener("click", ()=>{ P.state.offset=Math.max(0,P.state.offset-P.state.limit); P.load(); });
+    P.els.next.addEventListener("click", ()=>{ P.state.offset+=P.state.limit; P.load(); });
+
+    // 行内操作
+    $("#p-table").addEventListener("click", async (e)=>{
+      const btn = e.target.closest("button,select");
+      if(!btn) return;
+      // 查看任务
+      if(btn.dataset.pViewtasks){
+        const pid = btn.dataset.pViewtasks;
+        $(".tab[data-tab='tasks']").click();
+        T.els.project.value = pid;
+        T.state.offset = 0;
+        await T.load();
+      }
+      // 编辑
+      if(btn.dataset.pEdit){
+        const p = JSON.parse(btn.dataset.pEdit);
+        P.openForm(p);
+      }
+      // 删除
+      if(btn.dataset.pDel){
+        const id = Number(btn.dataset.pDel);
+        if(confirm(`确定删除项目 #${id}？此操作将级联删除其任务！`)){
+          try{ await Api.deleteProject(id); toast("已删除项目 #"+id); P.load(); }
+          catch(err){ toast("删除失败："+err.message,false); }
+        }
+      }
+    });
+    // 状态切换
+    $("#p-table").addEventListener("change", async (e)=>{
+      const sel = e.target.closest("select[data-p-status]");
+      if(!sel) return;
+      const id = Number(sel.dataset.pStatus);
+      try{ await Api.patchProjectStatus(id, sel.value); toast("状态已更新"); }
+      catch(err){ toast("更新状态失败："+err.message,false); }
+    });
+
+    // 新建
+    P.els.btnNew.addEventListener("click", ()=>P.openForm(null));
+  },
+  openForm(p){ // p=null 新建
+    $("#mp-title").textContent = p ? `编辑项目 #${p.sqlid}` : "新建项目";
+    const f = $("#mp-form");
+    f.reset();
+    f.sqlid.value = p?.sqlid || "";
+    f.name.value = p?.name || "";
+    f.status.value = p?.status || "planned";
+    f.description.value = p?.description || "";
+    f.project_manager_id.value = p?.project_manager_id ?? "";
+    f.client_id.value = p?.client_id ?? "";
+    f.budget.value = p?.budget ?? "";
+    f.start_date.value = p?.start_date ? toISO(p.start_date) : "";
+    f.deadline.value = p?.deadline ? toISO(p.deadline) : "";
+    modalOpen("#modal-project");
+  },
+  async submitForm(ev){
+    ev.preventDefault();
+    const f = ev.target;
+    const payload = {
+      name: f.name.value.trim(),
+      status: f.status.value,
+      description: str(f.description.value.trim()),
+      project_manager_id: int(f.project_manager_id.value),
+      client_id: int(f.client_id.value),
+      budget: num(f.budget.value),
+      start_date: f.start_date.value || null,
+      deadline: f.deadline.value || null,
+    };
+    const id = f.sqlid.value ? Number(f.sqlid.value) : null;
+    try{
+      if(id){ await Api.updateProject(id, payload); toast("项目已更新"); }
+      else  { await Api.createProject(payload); toast("项目已创建"); }
+      modalClose("#modal-project"); P.load();
+    }catch(err){ toast("保存失败："+err.message,false); }
+  }
+};
+
+/* ========================= 任务：列表/分页/表单 ========================= */
+const T = {
+  state: {offset:0, limit:20},
+  els: {
+    q: $("#t-q"), status: $("#t-status"), priority: $("#t-priority"),
+    assignee: $("#t-assignee"), after: $("#t-after"), before: $("#t-before"),
+    project: $("#t-project"), sort: $("#t-sort"), limit: $("#t-limit"),
+    refresh: $("#t-refresh"), table: $("#t-table tbody"),
+    meta: $("#t-meta"), prev: $("#t-prev"), next: $("#t-next"),
+    btnNew: $("#t-new"),
+  },
+  qs(){
+    return {
+      q: T.els.q.value.trim() || "",
+      sqlproject_id: T.els.project.value.trim(),
+      status: T.els.status.value || "",
+      assignee_id: T.els.assignee.value.trim(),
+      priority: T.els.priority.value || "",
+      due_after: T.els.after.value || "",
+      due_before: T.els.before.value || "",
+      sort: T.els.sort.value,
+      limit: T.state.limit,
+      offset: T.state.offset
+    };
+  },
+  async load(){
+    try{
+      const data = await Api.listTasks(T.qs());
+      const items = data.items||[];
+      T.render(items);
+      T.els.meta.textContent = `${T.state.offset+1}-${T.state.offset+items.length} / ≥${T.state.offset+items.length}`;
+    }catch(err){
+      toast("加载任务失败："+err.message,false);
+    }
+  },
+  render(list){
+    T.els.table.innerHTML = list.map(t=>{
+      const st = `<span class="status ${t.status}">${t.status}</span>`;
+      const pr = t.priority ? `<span class="priority ${t.priority}">${t.priority}</span>` : "—";
+      const hrs = `${t.estimated_hours ?? "—"} / ${t.actual_hours ?? "—"}`;
+      const due = t.due_date || "—";
+      const time = (t.created_at||"").replace("T"," ").replace("Z","");
+      return `<tr>
+        <td>${t.sqlid}</td>
+        <td>${t.sqlproject_id}</td>
+        <td><strong>${t.task_name||""}</strong><br><small class="help">${t.description||""}</small></td>
+        <td>${st}</td>
+        <td>${pr}</td>
+        <td>${hrs}</td>
+        <td>${due}</td>
+        <td><small>${time}</small></td>
+        <td>
+          <div class="row">
+            <button class="button small ghost" data-t-edit='${JSON.stringify(t)}'>编辑</button>
+            <select class="input" style="min-height:30px" data-t-status="${t.sqlid}">
+              <option ${t.status==="todo"?"selected":""}>todo</option>
+              <option ${t.status==="doing"?"selected":""}>doing</option>
+              <option ${t.status==="done"?"selected":""}>done</option>
+              <option ${t.status==="blocked"?"selected":""}>blocked</option>
+            </select>
+            <button class="button small danger" data-t-del="${t.sqlid}">删除</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("");
+  },
+  bind(){
+    ["change","keyup"].forEach(ev=>{
+      [T.els.q, T.els.status, T.els.priority, T.els.assignee, T.els.after, T.els.before, T.els.project, T.els.sort]
+        .forEach(el=> el.addEventListener(ev, ()=>{ T.state.offset=0; T.state.limit=Number(T.els.limit.value); T.load(); }));
+    });
+    T.els.limit.addEventListener("change", ()=>{ T.state.limit=Number(T.els.limit.value); T.state.offset=0; T.load(); });
+    T.els.refresh.addEventListener("click", ()=>T.load());
+    T.els.prev.addEventListener("click", ()=>{ T.state.offset=Math.max(0,T.state.offset-T.state.limit); T.load(); });
+    T.els.next.addEventListener("click", ()=>{ T.state.offset+=T.state.limit; T.load(); });
+
+    // 行内操作
+    $("#t-table").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button,select");
+      if(!btn) return;
+      if(btn.dataset.tEdit){
+        const t = JSON.parse(btn.dataset.tEdit);
+        T.openForm(t);
+      }
+      if(btn.dataset.tDel){
+        const id = Number(btn.dataset.tDel);
+        if(confirm(`确定删除任务 #${id}？`)){
+          Api.deleteTask(id).then(()=>{ toast("已删除任务 #"+id); T.load(); })
+            .catch(err=>toast("删除失败："+err.message,false));
+        }
+      }
+    });
+    // 状态切换
+    $("#t-table").addEventListener("change", async (e)=>{
+      const sel = e.target.closest("select[data-t-status]");
+      if(!sel) return;
+      const id = Number(sel.dataset.tStatus);
+      try{ await Api.patchTaskStatus(id, sel.value); toast("状态已更新"); }
+      catch(err){ toast("更新状态失败："+err.message,false); }
+    });
+
+    // 新建
+    T.els.btnNew.addEventListener("click", ()=>T.openForm(null));
+  },
+  openForm(t){ // t=null 新建
+    $("#mt-title").textContent = t ? `编辑任务 #${t.sqlid}` : "新建任务";
+    const f = $("#mt-form");
+    f.reset();
+    f.sqlid.value = t?.sqlid || "";
+    f.sqlproject_id.value = t?.sqlproject_id || (P._lastProjectId || "");
+    f.task_name.value = t?.task_name || "";
+    f.description.value = t?.description || "";
+    f.assignee_id.value = t?.assignee_id ?? "";
+    f.priority.value = t?.priority ?? "";
+    f.estimated_hours.value = t?.estimated_hours ?? "";
+    f.actual_hours.value = t?.actual_hours ?? "";
+    f.status.value = t?.status || "todo";
+    f.due_date.value = t?.due_date ? toISO(t.due_date) : "";
+    modalOpen("#modal-task");
+  },
+  async submitForm(ev){
+    ev.preventDefault();
+    const f = ev.target;
+    const id = f.sqlid.value ? Number(f.sqlid.value) : null;
+    const payload = {
+      sqlproject_id: Number(f.sqlproject_id.value),
+      task_name: f.task_name.value.trim(),
+      description: str(f.description.value.trim()),
+      assignee_id: int(f.assignee_id.value),
+      priority: str(f.priority.value || ""),
+      estimated_hours: num(f.estimated_hours.value),
+      actual_hours: num(f.actual_hours.value),
+      status: f.status.value,
+      due_date: f.due_date.value || null,
+    };
+    try{
+      if(id){ await Api.updateTask(id, payload); toast("任务已更新"); }
+      else  { await Api.createTask(payload, null); toast("任务已创建"); }
+      modalClose("#modal-task"); T.load();
+    }catch(err){ toast("保存失败："+err.message,false); }
+  }
+};
+
+/* ========================= 示例数据（可选） ========================= */
+$("#seedBtn").addEventListener("click", async ()=>{
+  if(!confirm("为快速体验，将创建 2 个项目 + 若干任务。继续？")) return;
+  try{
+    const p1 = await Api.createProject({name:"网站重构",status:"active",budget:50000,start_date:"2025-09-01",deadline:"2025-12-31",description:"前后端一体化重构"});
+    const p2 = await Api.createProject({name:"移动端上线",status:"planned",budget:20000,start_date:"2025-10-10",deadline:"2026-01-10",description:"小程序 & App"});
+    P._lastProjectId = p1.sqlid;
+    await Api.createTask({sqlproject_id:p1.sqlid,task_name:"数据库建模",status:"doing",priority:"high",estimated_hours:16,due_date:"2025-10-01"});
+    await Api.createTask({sqlproject_id:p1.sqlid,task_name:"接口联调",status:"todo",priority:"medium",estimated_hours:24,due_date:"2025-10-15"});
+    await Api.createTask({sqlproject_id:p2.sqlid,task_name:"UI 设计规范",status:"todo",priority:"low",estimated_hours:12,due_date:"2025-10-20"});
+    toast("已创建示例数据");
+    P.load(); T.load();
+  }catch(err){ toast("创建示例数据失败："+err.message,false); }
+});
+
+/* ========================= 表单提交绑定 & 初始化 ========================= */
+$("#mp-form").addEventListener("submit", P.submitForm);
+$("#mt-form").addEventListener("submit", T.submitForm);
+P.bind(); T.bind();
+P.load(); T.load();
+</script>
+</body>
+</html>
