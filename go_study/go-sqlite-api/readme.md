@@ -26,3 +26,16 @@ go run .   # 默认 http://127.0.0.1:8080
 - 过滤（示例）：
    - GET /api/orders?status=PAID&customer_id=1
    - GET /api/products?category=Peripherals
+
+**后端设计说明** 设计说明（新手友好版）
+- SQLite 驱动：用 modernc.org/sqlite，优点是纯 Go、跨平台，避免 gcc 依赖；如果你偏好 github.com/mattn/go-sqlite3 也可直接替换驱动导入（但需 CGO）。
+- 外键与级联：开启 PRAGMA foreign_keys=ON；order_items、payments 级联随订单删除。
+- 时间字段：统一用 TEXT 存 RFC3339（SQLite 没有原生 datetime 类型），查询/序列化准确且可读。
+- 事务：创建订单时，主单 + 明细 + 付款放在一个事务里，要么都成功要么都回滚，避免“孤儿数据”。
+- 分页排序：通用 page/size/sort，并白名单允许排序的字段，防止 SQL 注入。
+- CORS：允许任意源 *，前端（如 localhost:3000）可直接调用；生产建议收紧域名。
+- 索引：对常用查询列建索引（如 orders.customer_id、order_items.order_id）。
+- 删除行为：删除客户/产品若被引用会报错（RESTRICT），删除订单会级联删明细与付款（CASCADE）。
+
+
+
