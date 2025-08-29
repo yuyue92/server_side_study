@@ -22,3 +22,20 @@ SELECT id FROM orders WHERE status = 'PAID'
 UNION ALL
 SELECT id FROM orders WHERE status = 'SHIPPED';
 ```
+
+**2) 排序与分页（ORDER BY / LIMIT-OFFSET / FETCH）**
+目标：按下单时间倒序取最近 20 单。
+```
+-- MySQL / Postgres
+SELECT id, customer_id, order_date
+FROM orders
+ORDER BY order_date DESC
+LIMIT 20 OFFSET 0;      -- 第 1 页
+
+-- 标准写法（Oracle/DB2/Postgres 也支持）
+SELECT id, customer_id, order_date
+FROM orders
+ORDER BY order_date DESC
+FETCH FIRST 20 ROWS ONLY;
+
+```
