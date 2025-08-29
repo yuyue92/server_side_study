@@ -8,7 +8,7 @@ go mod init example.com/go-sqlite-api
 # 3) 拉取依赖
 go get github.com/go-chi/chi/v5 github.com/go-chi/cors modernc.org/sqlite
 
-# 4) 运行
+# 4) 运行 【 main.go 在服务起来后，自动打开浏览器并加载 admin.html（由后端按根路径 / 提供），实现“一键启动前后端”。】
 go run .   # 默认 http://127.0.0.1:8080
 ```
 
