@@ -13,3 +13,20 @@
 | **可缓存性**   | 一般不支持缓存                                                | GET 方法天然支持缓存                           |
 | **状态管理**   | 可支持有状态（Session）                                        | 通常为无状态（每个请求都独立）                        |
 | **适合场景**   | 内部系统、RPC框架（如 gRPC、Thrift）                              | Web 应用、前后端分离、移动端接口                     |
+
+传统API特征：
+- 接口名就是“动作”
+- URL 显示“动词”
+- 缺少语义统一性
+```
+//传统API示例
+GET /getUserInfo?id=123
+POST /updateUser?id=123&name=Tom
+
+//RESTful API 示例
+GET    /users/123           # 获取用户信息
+PUT    /users/123           # 更新用户信息
+POST   /users               # 创建新用户
+DELETE /users/123           # 删除用户
+```
+
