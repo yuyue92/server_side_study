@@ -29,4 +29,7 @@ PUT    /users/123           # 更新用户信息
 POST   /users               # 创建新用户
 DELETE /users/123           # 删除用户
 ```
-
+RESTful API特征：
+- URL 只表示“资源”
+- 动作交由 HTTP 方法表达
+- 统一语义，易读易维护
