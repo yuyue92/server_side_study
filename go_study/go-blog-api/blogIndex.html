@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>博客系统前端 - 文章 & 评论</title>
+<style>
+  :root{
+    --primary:#0d6efd; --secondary:#6c757d; --success:#198754; --danger:#dc3545;
+    --warning:#ffc107; --info:#0dcaf0; --light:#f8f9fa; --dark:#212529; --muted:#6c757d;
+    --border:#dee2e6; --bg:#f5f6f8; --white:#fff;
+  }
+  html,body{height:100%;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;color:#212529;}
+  .container{max-width:1100px;margin:24px auto;padding:0 16px;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.03);margin-bottom:16px;}
+ a{text-decoration:none}
+  .card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .card-body{padding:16px;}
+  .row{display:flex;flex-wrap:wrap;gap:12px}
+  .col{flex:1 1 0}
+  .col-3{flex:0 0 calc(25% - 12px)}
+  .col-4{flex:0 0 calc(33.33% - 12px)}
+  .col-6{flex:0 0 calc(50% - 12px)}
+  .col-8{flex:0 0 calc(66.66% - 12px)}
+  .col-12{flex:0 0 100%}
+  .form-control, .form-select, .form-textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:#fff; outline:none;
+  }
+  .form-textarea{min-height:140px;resize:vertical}
+  .form-check{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:6px;border:1px solid transparent;cursor:pointer;font-weight:600}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn-primary{background:var(--primary);color:white;border-color:var(--primary)}
+  .btn-secondary{background:var(--secondary);color:white;border-color:var(--secondary)}
+  .btn-success{background:var(--success);color:white;border-color:var(--success)}
+  .btn-danger{background:var(--danger);color:white;border-color:var(--danger)}
+  .btn-outline{background:white;color:var(--dark);border-color:var(--border)}
+  .btn-link{background:transparent;border:0;color:var(--primary);padding:0}
+  .badge{padding:.25rem .5rem;border-radius:10px;font-size:.75rem;font-weight:700;display:inline-block}
+  .badge-draft{background:#e9ecef;color:#343a40}
+  .badge-published{background:#d1e7dd;color:#0f5132}
+  .badge-archived{background:#ffe5d0;color:#7a3b00}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top}
+  .table th{background:#f9fafb;text-align:left}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .nav-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:4px;flex-wrap:wrap}
+  .nav-tabs .nav-link{padding:10px 14px;border:1px solid var(--border);border-bottom:0;border-radius:8px 8px 0 0;background:#f8f9fa;color:#495057}
+  .nav-tabs .nav-link.active{background:#fff;border-bottom:1px solid #fff;color:#000}
+  .pagination{display:flex;gap:6px;align-items:center}
+  .pagination .page{padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer}
+  .pagination .active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .muted{color:var(--muted);font-size:.9rem}
+  .alert{padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:#fff;margin-bottom:12px}
+  .alert-success{border-color:#badbcc;background:#d1e7dd}
+  .alert-danger{border-color:#f5c2c7;background:#f8d7da}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .comment{border:1px solid var(--border);border-radius:8px;padding:10px;margin:10px 0;background:#fff}
+  .comment .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .indent{margin-left:20px;border-left:2px dashed var(--border);padding-left:12px}
+  .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);padding:4px 8px;border-radius:20px;background:#fff}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace;background:#f8f9fa;border:1px solid var(--border);padding:0 6px;border-radius:4px}
+  .split{display:flex;gap:16px}
+  .split > *{flex:1}
+  .right{display:flex;gap:8px;align-items:center}
+  .small{font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2 style="margin-bottom:8px;">📝 博客系统</h2>
+  <div class="muted">后端：<span class="kbd" id="apiBaseView"></span> · <span class="chip"><input type="checkbox" id="adminToggle"> <label for="adminToggle">管理员模式（发送 <code>X-Admin: true</code>）</label></span></div>
+
+  <nav class="nav-tabs" id="navTabs">
+    <a class="nav-link active" data-tab="tab-articles" href="javascript:void(0)">文章列表</a>
+    <a class="nav-link" data-tab="tab-editor" href="javascript:void(0)">文章编辑</a>
+    <a class="nav-link" data-tab="tab-detail" href="javascript:void(0)">详情 & 评论</a>
+    <a class="nav-link" data-tab="tab-stats" href="javascript:void(0)">统计 Top</a>
+  </nav>
+
+  <!-- 全局提示 -->
+  <div id="globalAlert"></div>
+
+  <!-- 文章列表 Tab -->
+  <section id="tab-articles" class="card">
+    <div class="card-header">
+      <div class="toolbar">
+        <input class="form-control" id="f_q" placeholder="关键词（标题/内容）">
+        <input class="form-control" id="f_author" placeholder="作者ID">
+        <input class="form-control" id="f_category" placeholder="分类ID">
+        <select class="form-select" id="f_status">
+          <option value="">状态（全部）</option>
+          <option value="draft">草稿</option>
+          <option value="published">已发布</option>
+          <option value="archived">归档</option>
+        </select>
+        <select class="form-select" id="f_sort">
+          <option value="-created_at">按创建时间（新→旧）</option>
+          <option value="created_at">按创建时间（旧→新）</option>
+          <option value="-view_count">按浏览量（高→低）</option>
+          <option value="view_count">按浏览量（低→高）</option>
+        </select>
+        <select class="form-select" id="f_pagesize">
+          <option value="10">每页 10</option>
+          <option value="20">每页 20</option>
+          <option value="50">每页 50</option>
+        </select>
+        <button class="btn btn-primary" id="btnSearch">搜索</button>
+        <button class="btn btn-outline" id="btnReset">重置</button>
+      </div>
+      <div class="right">
+        <button class="btn btn-success" id="btnGoCreate">+ 新建文章</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table" id="articlesTable">
+          <thead>
+            <tr>
+              <th style="width:70px;">ID</th>
+              <th>标题</th>
+              <th style="width:90px;">作者</th>
+              <th style="width:90px;">分类</th>
+              <th style="width:120px;">状态</th>
+              <th style="width:100px;">浏览</th>
+              <th style="width:200px;">时间</th>
+              <th style="width:240px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="articlesTbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pager"></div>
+    </div>
+  </section>
+
+  <!-- 文章编辑 Tab -->
+  <section id="tab-editor" class="card" style="display:none;">
+    <div class="card-header">
+      <strong id="editorTitle">创建文章</strong>
+      <div class="muted">编辑/创建后可切至「详情 & 评论」查看</div>
+    </div>
+    <div class="card-body">
+      <form id="articleForm" class="stack">
+        <div class="row">
+          <div class="col-6">
+            <label class="small">标题</label>
+            <input class="form-control" id="e_title" required />
+          </div>
+          <div class="col-3">
+            <label class="small">作者 ID</label>
+            <input type="number" class="form-control" id="e_author" required />
+          </div>
+          <div class="col-3">
+            <label class="small">分类 ID</label>
+            <input type="number" class="form-control" id="e_category" required />
+          </div>
+          <div class="col-3">
+            <label class="small">状态</label>
+            <select class="form-select" id="e_status">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+              <option value="archived">archived</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="small">内容</label>
+            <textarea class="form-textarea" id="e_content" required></textarea>
+          </div>
+          <div class="col-12">
+            <div class="toolbar">
+              <button class="btn btn-primary" id="btnSaveArticle" type="submit">保存</button>
+              <button class="btn btn-outline" id="btnResetEditor" type="button">清空</button>
+              <span class="muted">文章 ID：<span id="editingIdView">（新建）</span></span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 详情 & 评论 Tab -->
+  <section id="tab-detail" class="card" style="display:none;">
+    <div class="card-header">
+      <div class="toolbar">
+        <input class="form-control" id="d_id_input" placeholder="输入文章ID">
+        <button class="btn btn-primary" id="btnLoadDetail">加载详情</button>
+        <div class="form-check">
+          <input type="checkbox" id="d_include_unapproved" />
+          <label for="d_include_unapproved">显示未审核评论</label>
+        </div>
+      </div>
+      <div class="right">
+        <button class="btn btn-danger" id="btnDeleteArticle">删除文章</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="detailView" class="stack"></div>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-header">
+          <strong>评论</strong>
+          <div class="muted">支持回复、点赞；管理员模式可审核/删除</div>
+        </div>
+        <div class="card-body">
+          <div id="commentsView"></div>
+          <hr/>
+          <form id="commentForm" class="stack">
+            <div class="row">
+              <div class="col-3">
+                <label class="small">用户 ID</label>
+                <input type="number" id="c_user" class="form-control" required />
+              </div>
+              <div class="col-9">
+                <label class="small">评论内容</label>
+                <input id="c_content" class="form-control" required placeholder="说点什么..." />
+                <input type="hidden" id="c_parent" />
+                <div class="muted small" id="replyHint" style="display:none;">回复给评论 <span id="replyTo"></span>，<a href="javascript:void(0)" id="cancelReply">取消</a></div>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-success" type="submit">发表评论</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 统计 Tab -->
+  <section id="tab-stats" class="card" style="display:none;">
+    <div class="card-header">
+      <div class="toolbar">
+        <label>Top 数：</label>
+        <input class="form-control" id="s_limit" style="width:90px;" value="10" />
+        <button class="btn btn-primary" id="btnLoadTop">加载 Top</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="topView"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ==================== 配置 ==================== */
+const apiBase = 'http://localhost:8080/api';
+document.getElementById('apiBaseView').textContent = apiBase;
+
+/* ==================== 工具函数 ==================== */
+const qs = (s, el=document)=>el.querySelector(s);
+const qsa = (s, el=document)=>Array.from(el.querySelectorAll(s));
+const fmt = ts => ts ? new Date(ts).toLocaleString() : '';
+const escapeHtml = s => String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;' }[m]));
+
+function showAlert(msg, type='success', timeout=2000){
+  const box = document.getElementById('globalAlert');
+  box.innerHTML = `<div class="alert ${type==='success'?'alert-success':'alert-danger'}">${escapeHtml(msg)}</div>`;
+  if(timeout) setTimeout(()=>box.innerHTML='', timeout);
+}
+
+function adminHeaders(){
+  const isAdmin = qs('#adminToggle').checked;
+  return isAdmin ? { 'X-Admin':'true' } : {};
+}
+
+async function api(path, opts={}){
+  const headers = Object.assign({'Content-Type':'application/json'}, adminHeaders(), opts.headers||{});
+  const res = await fetch(apiBase+path, Object.assign({}, opts, { headers }));
+  if(!res.ok){
+    let detail = '';
+    try{ const j = await res.json(); detail = j.error || JSON.stringify(j); }catch{ detail = await res.text(); }
+    throw new Error(`${res.status} ${res.statusText} - ${detail}`);
+  }
+  const ct = res.headers.get('content-type')||'';
+  if(ct.includes('application/json')) return res.json();
+  return res.text();
+}
+
+function statusBadge(s){
+  if(s==='published') return `<span class="badge badge-published">published</span>`;
+  if(s==='archived') return `<span class="badge badge-archived">archived</span>`;
+  return `<span class="badge badge-draft">draft</span>`;
+}
+
+/* ==================== Tab 切换 ==================== */
+qsa('.nav-link').forEach(a=>{
+  a.addEventListener('click', ()=>{
+    qsa('.nav-link').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+    const id = a.dataset.tab;
+    qsa('section.card').forEach(sec=>sec.style.display='none');
+    qs('#'+id).style.display='';
+  });
+});
+
+/* ==================== 文章列表 ==================== */
+const state = { page:1, page_size:10, q:'', author_id:'', category_id:'', status:'', sort:'-created_at' };
+
+async function loadArticles(){
+  const p = new URLSearchParams({
+    page:state.page, page_size:state.page_size,
+    q:state.q, author_id:state.author_id, category_id:state.category_id,
+    status:state.status, sort:state.sort
+  });
+  const data = await api(`/articles?${p.toString()}`);
+  renderArticles(data);
+}
+function renderArticles(data){
+  const tb = qs('#articlesTbody'); tb.innerHTML='';
+  for(const it of data.list){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${it.id}</td>
+      <td><strong>${escapeHtml(it.title)}</strong></td>
+      <td>${it.author_id ?? ''}</td>
+      <td>${it.category_id ?? ''}</td>
+      <td>${statusBadge(it.status)}</td>
+      <td>${it.view_count ?? 0}</td>
+      <td>
+        <div class="small">创建：${fmt(it.created_at)}</div>
+        <div class="small">更新：${fmt(it.updated_at)}</div>
+      </td>
+      <td>
+        <div class="toolbar">
+          <button class="btn btn-outline" data-action="view" data-id="${it.id}">详情</button>
+          <button class="btn btn-secondary" data-action="edit" data-id="${it.id}">编辑</button>
+          <div class="dropdown" style="display:inline-block;position:relative">
+            <button class="btn btn-primary" data-action="status" data-id="${it.id}">状态</button>
+            <div class="card" style="position:absolute;display:none;z-index:10;min-width:120px;">
+              <div class="card-body stack">
+                <button class="btn btn-outline" data-action="set-status" data-id="${it.id}" data-status="draft">设为 draft</button>
+                <button class="btn btn-outline" data-action="set-status" data-id="${it.id}" data-status="published">设为 published</button>
+                <button class="btn btn-outline" data-action="set-status" data-id="${it.id}" data-status="archived">设为 archived</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-danger" data-action="delete" data-id="${it.id}">删除</button>
+        </div>
+      </td>`;
+    tb.appendChild(tr);
+  }
+  // 简易下拉
+  qsa('button[data-action="status"]', tb).forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const card = btn.parentElement.querySelector('.card');
+      qsa('.dropdown .card', tb).forEach(x=>{if(x!==card) x.style.display='none';});
+      card.style.display = card.style.display==='none' || !card.style.display ? 'block':'none';
+      e.stopPropagation();
+    });
+  });
+  document.addEventListener('click', ()=> qsa('.dropdown .card').forEach(x=>x.style.display='none'));
+
+  // 行为委托
+  tb.addEventListener('click', async (e)=>{
+    const t = e.target.closest('button[data-action]'); if(!t) return;
+    const id = t.dataset.id;
+    const action = t.dataset.action;
+    try{
+      if(action==='view'){
+        // 切到详情
+        qs('[data-tab="tab-detail"]').click();
+        qs('#d_id_input').value = id;
+        await loadDetail();
+      }else if(action==='edit'){
+        qs('[data-tab="tab-editor"]').click();
+        await setEditorById(id);
+      }else if(action==='delete'){
+        if(!confirm(`确认删除文章 ${id} 吗？`)) return;
+        await api(`/articles/${id}`, { method:'DELETE' });
+        showAlert('文章已删除');
+        await loadArticles();
+      }else if(action==='set-status'){
+        const s = t.dataset.status;
+        await api(`/articles/${id}/status`, { method:'PATCH', body:JSON.stringify({status:s}) });
+        showAlert(`状态已更新为 ${s}`);
+        await loadArticles();
+      }
+    }catch(err){ showAlert(err.message,'danger',4000); }
+  });
+
+  // 分页
+  const pager = qs('#pager'); pager.innerHTML='';
+  const total = data.total_page;
+  const cur = data.page;
+  if(total <= 1){ return; }
+  function add(p, active=false){
+    const el = document.createElement('div');
+    el.className = 'page'+(active?' active':'');
+    el.textContent = p;
+    el.addEventListener('click', ()=>{ state.page = p; loadArticles().catch(console.error); });
+    pager.appendChild(el);
+  }
+  const start = Math.max(1, cur-2), end = Math.min(total, cur+2);
+  if(cur>1){ add(cur-1); }
+  for(let i=start;i<=end;i++){ add(i, i===cur); }
+  if(cur<total){ add(cur+1); }
+}
+
+// 过滤交互
+qs('#btnSearch').addEventListener('click', ()=>{
+  state.q = qs('#f_q').value.trim();
+  state.author_id = qs('#f_author').value.trim();
+  state.category_id = qs('#f_category').value.trim();
+  state.status = qs('#f_status').value;
+  state.sort = qs('#f_sort').value;
+  state.page_size = parseInt(qs('#f_pagesize').value||'10',10);
+  state.page = 1;
+  loadArticles().catch(err=>showAlert(err.message,'danger',4000));
+});
+qs('#btnReset').addEventListener('click', ()=>{
+  ['#f_q','#f_author','#f_category'].forEach(id=>qs(id).value='');
+  qs('#f_status').value=''; qs('#f_sort').value='-created_at'; qs('#f_pagesize').value='10';
+  state.page=1; state.page_size=10; state.q=''; state.author_id=''; state.category_id=''; state.status=''; state.sort='-created_at';
+  loadArticles().catch(err=>showAlert(err.message,'danger',4000));
+});
+qs('#btnGoCreate').addEventListener('click', ()=>{
+  qs('[data-tab="tab-editor"]').click();
+  resetEditor();
+});
+
+/* ==================== 文章编辑 ==================== */
+let editingId = null;
+function resetEditor(){
+  editingId = null;
+  qs('#editorTitle').textContent = '创建文章';
+  qs('#editingIdView').textContent = '（新建）';
+  qs('#e_title').value='';
+  qs('#e_author').value='';
+  qs('#e_category').value='';
+  qs('#e_status').value='draft';
+  qs('#e_content').value='';
+}
+async function setEditorById(id){
+  const art = await api(`/articles/${id}`, { method:'GET' }); // 会+1浏览量（可接受）
+  editingId = art.id;
+  qs('#editorTitle').textContent = `编辑文章 #${art.id}`;
+  qs('#editingIdView').textContent = art.id;
+  qs('#e_title').value = art.title||'';
+  qs('#e_author').value = art.author_id||'';
+  qs('#e_category').value = art.category_id||'';
+  qs('#e_status').value = art.status||'draft';
+  qs('#e_content').value = art.content||'';
+}
+qs('#btnResetEditor').addEventListener('click', resetEditor);
+qs('#articleForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const payload = {
+    title: qs('#e_title').value.trim(),
+    author_id: parseInt(qs('#e_author').value,10),
+    category_id: parseInt(qs('#e_category').value,10),
+    status: qs('#e_status').value,
+    content: qs('#e_content').value
+  };
+  try{
+    if(!payload.title || !payload.content) throw new Error('标题与内容必填');
+    if(!editingId){
+      const created = await api('/articles',{ method:'POST', body:JSON.stringify(payload) });
+      showAlert(`创建成功（ID=${created.id}）`);
+      editingId = created.id;
+      qs('#editingIdView').textContent = created.id;
+    }else{
+      // 局部更新
+      const upd = {};
+      ['title','author_id','category_id','status','content'].forEach(k=>{
+        upd[k] = payload[k];
+      });
+      const updated = await api(`/articles/${editingId}`, { method:'PUT', body:JSON.stringify(upd) });
+      showAlert(`已更新：${updated.title}`);
+    }
+  }catch(err){ showAlert(err.message,'danger',4000); }
+});
+
+/* ==================== 详情 & 评论 ==================== */
+let currentDetailId = null;
+
+qs('#btnLoadDetail').addEventListener('click', ()=> loadDetail().catch(err=>showAlert(err.message,'danger',4000)));
+
+async function loadDetail(){
+  const id = parseInt(qs('#d_id_input').value||'0',10);
+  if(!id){ throw new Error('请输入有效文章ID'); }
+  const art = await api(`/articles/${id}`, { method:'GET' }); // 自动+1浏览量
+  currentDetailId = art.id;
+  renderDetail(art);
+  await loadComments();
+}
+
+function renderDetail(art){
+  const box = qs('#detailView');
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <strong>#${art.id} · ${escapeHtml(art.title)}</strong>
+        <div class="right">
+          <span>状态：${statusBadge(art.status)}</span>
+          <select id="d_change_status" class="form-select" style="width:150px;">
+            <option value="" disabled selected>变更状态</option>
+            <option value="draft">draft</option>
+            <option value="published">published</option>
+            <option value="archived">archived</option>
+          </select>
+          <button class="btn btn-secondary" id="d_apply_status">应用</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="muted">作者ID：${art.author_id} · 分类ID：${art.category_id}</div>
+        <div class="muted">浏览：${art.view_count} · 创建：${fmt(art.created_at)} · 更新：${fmt(art.updated_at)}</div>
+        <hr/>
+        <div style="white-space:pre-wrap;">${escapeHtml(art.content)}</div>
+      </div>
+    </div>
+  `;
+  qs('#d_apply_status').addEventListener('click', async ()=>{
+    const val = qs('#d_change_status').value;
+    if(!val){ return; }
+    try{
+      await api(`/articles/${art.id}/status`, { method:'PATCH', body:JSON.stringify({status:val}) });
+      showAlert('状态已更新');
+      await loadDetail(); // 重新加载
+    }catch(err){ showAlert(err.message,'danger',4000); }
+  });
+}
+
+async function loadComments(){
+  if(!currentDetailId) return;
+  const include = qs('#d_include_unapproved').checked ? '1' : '0';
+  const list = await api(`/articles/${currentDetailId}/comments?include_unapproved=${include}`);
+  renderComments(list);
+}
+
+qs('#d_include_unapproved').addEventListener('change', ()=>loadComments().catch(console.error));
+
+function renderComments(tree){
+  const wrap = qs('#commentsView');
+  if(!tree || tree.length===0){
+    wrap.innerHTML = `<div class="muted">暂无评论</div>`;
+    return;
+  }
+  wrap.innerHTML = tree.map(node => renderCommentNode(node)).join('');
+  // 绑定动作
+  wrap.addEventListener('click', onCommentAction);
+}
+
+function renderCommentNode(node, depth=0){
+  const approved = node.is_approved;
+  const admin = qs('#adminToggle').checked;
+  return `
+    <div class="comment ${depth? 'indent':''}" data-id="${node.id}">
+      <div><strong>用户 ${node.user_id}</strong> · <span class="muted">${fmt(node.created_at)}</span> ${approved? '':'<span class="badge badge-draft">未审核</span>'}</div>
+      <div style="white-space:pre-wrap;margin-top:4px">${escapeHtml(node.content)}</div>
+      <div class="actions">
+        <button class="btn btn-outline small" data-act="like">👍 ${node.like_count||0}</button>
+        <button class="btn btn-outline small" data-act="reply">↩️ 回复</button>
+        ${admin ? `<button class="btn btn-outline small" data-act="approve" data-approved="${approved?'1':'0'}">${approved?'撤销审核':'审核通过'}</button>` : ''}
+        ${admin ? `<button class="btn btn-danger small" data-act="delete">删除</button>` : ''}
+      </div>
+      ${(node.children||[]).map(ch=>renderCommentNode(ch, depth+1)).join('')}
+    </div>
+  `;
+}
+
+async function onCommentAction(e){
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+  const act = btn.dataset.act;
+  const card = btn.closest('.comment'); if(!card) return;
+  const cid = card.dataset.id;
+
+  try{
+    if(act==='reply'){
+      qs('#c_parent').value = cid;
+      qs('#replyTo').textContent = cid;
+      qs('#replyHint').style.display = '';
+      qs('#c_content').focus();
+    }else if(act==='like'){
+      const updated = await api(`/comments/${cid}/like`, { method:'PATCH' });
+      btn.innerHTML = `👍 ${updated.like_count||0}`;
+    }else if(act==='approve'){
+      const approved = btn.dataset.approved==='1';
+      await api(`/comments/${cid}/approve`, { method:'PATCH', body:JSON.stringify({approved:!approved}) });
+      showAlert(approved?'已撤销审核':'已审核通过');
+      await loadComments();
+    }else if(act==='delete'){
+      if(!confirm(`确认删除评论 ${cid}？`)) return;
+      await api(`/comments/${cid}`, { method:'DELETE' });
+      showAlert('评论已删除');
+      await loadComments();
+    }
+  }catch(err){ showAlert(err.message,'danger',4000); }
+}
+
+// 取消回复
+qs('#cancelReply').addEventListener('click', ()=>{
+  qs('#c_parent').value='';
+  qs('#replyTo').textContent='';
+  qs('#replyHint').style.display='none';
+});
+
+// 发表评论
+qs('#commentForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentDetailId){ return showAlert('请先加载文章详情','danger',3000); }
+  const payload = {
+    user_id: parseInt(qs('#c_user').value,10),
+    content: qs('#c_content').value.trim()
+  };
+  const parent = qs('#c_parent').value;
+  if(parent) payload.parent_comment_id = parseInt(parent,10);
+  try{
+    const created = await api(`/articles/${currentDetailId}/comments`, { method:'POST', body:JSON.stringify(payload) });
+    qs('#c_content').value=''; qs('#c_parent').value=''; qs('#replyHint').style.display='none';
+    const include = qs('#d_include_unapproved').checked;
+    showAlert(`评论已提交${include? '，已显示':'，待审核可切换“显示未审核评论”查看'}`);
+    await loadComments();
+  }catch(err){ showAlert(err.message,'danger',4000); }
+});
+
+// 删除文章（详情页右上角）
+qs('#btnDeleteArticle').addEventListener('click', async ()=>{
+  if(!currentDetailId) return;
+  if(!confirm(`确认删除文章 ${currentDetailId}？该文章下评论将一并删除。`)) return;
+  try{
+    await api(`/articles/${currentDetailId}`, { method:'DELETE' });
+    showAlert('文章已删除');
+    qs('#detailView').innerHTML='';
+    qs('#commentsView').innerHTML='';
+    currentDetailId=null;
+  }catch(err){ showAlert(err.message,'danger',4000); }
+});
+
+/* ==================== 统计 ==================== */
+qs('#btnLoadTop').addEventListener('click', async ()=>{
+  let limit = parseInt(qs('#s_limit').value||'10',10);
+  if(!limit || limit<1) limit=10;
+  try{
+    const list = await api(`/stats/top?limit=${limit}`);
+    const html = `
+      <table class="table">
+        <thead><tr><th>ID</th><th>标题</th><th>浏览</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+        <tbody>
+          ${list.map(a=>`
+            <tr>
+              <td>${a.id}</td>
+              <td>${escapeHtml(a.title)}</td>
+              <td>${a.view_count||0}</td>
+              <td>${statusBadge(a.status)}</td>
+              <td>${fmt(a.created_at)}</td>
+              <td>
+                <button class="btn btn-outline small" data-top-view="${a.id}">查看</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+    qs('#topView').innerHTML = html;
+    qs('#topView').addEventListener('click', async (e)=>{
+      const b = e.target.closest('button[data-top-view]'); if(!b) return;
+      const id = b.dataset.topView;
+      qs('[data-tab="tab-detail"]').click();
+      qs('#d_id_input').value = id;
+      await loadDetail();
+    }, { once:true });
+  }catch(err){ showAlert(err.message,'danger',4000); }
+});
+
+/* ==================== 初始化 ==================== */
+window.addEventListener('DOMContentLoaded', ()=>{
+  loadArticles().catch(err=>showAlert(err.message,'danger',4000));
+});
+</script>
+</body>
+</html>
