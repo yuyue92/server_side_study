@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // 1. 条件语句
 func checkScore(n int) string {
@@ -36,6 +39,33 @@ func collectionDemo() {
 	}
 }
 
+// 练习1：FizzBuzz
+func fizzBuzz(n int) {
+	for i := 0; i < n; i++ {
+		switch {
+		case i%15 == 0:
+			fmt.Println("FizzBuzz", i)
+		case i%3 == 0:
+			fmt.Println("Fizz", i)
+		case i%5 == 0:
+			fmt.Println("Buzz", i)
+		default:
+			fmt.Println("i: ", i)
+		}
+	}
+}
+
+// 练习2：统计单词频率
+func letterFrequency(text string) map[string]int {
+	words := strings.Split(text, "")
+	fmt.Println("words: ", words)
+	fre := make(map[string]int)
+	for _, val := range words {
+		fre[val] += 1
+	}
+	return fre
+}
+
 func main() {
 	var name string = "zhangsna"
 	var age int = 98
@@ -51,4 +81,7 @@ func main() {
 	fmt.Println("=========check_Score is : ", check1, " sum_number is: ", sum1)
 	fmt.Println(score, price, isReady, "==============", name, age, isActive)
 	collectionDemo()
+	freq := letterFrequency("zhangsan")
+	fmt.Println("frequencys: ", freq)
+	fizzBuzz(17)
 }
