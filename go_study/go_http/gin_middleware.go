@@ -38,6 +38,9 @@ func main() {
 	v1.GET("/posts", getPosts)
 	v1.GET("/post/:id", getPost)
 
+	// ========== 写法 3：链式调用（最简洁）==========
+	r.Group("api/v2").GET("/users", getUserlist).GET("user/:id", getUserByID).GET("/comments", getComments)
+
 	r.Run(":8081")
 }
 
@@ -53,4 +56,21 @@ func getPosts(c *gin.Context) {
 func getPost(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(200, gin.H{"id": id, "title": "post_" + id})
+}
+func getUserlist(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"users": []gin.H{
+			{"id": 1, "name": "zhangsna", "age": 33},
+			{"id": 2, "name": "lisi", "age": 44},
+			{"id": 3, "name": "wangwu", "age": 35},
+		},
+	})
+}
+func getUserByID(c *gin.Context) {
+	id := c.Param("id")
+	c.JSON(200, gin.H{"id": id, "name": "user_" + id})
+}
+
+func getComments(c *gin.Context) {
+	c.JSON(200, gin.H{"data": "comment"})
 }
