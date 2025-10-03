@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TODO 管理台 · 原生版</title>
+    <style>
+        :root {
+            --bg: #fefefe;
+            --panel: #fefefe;
+            --muted: #8aa0bf;
+            --border: #24324b;
+            --accent: #4f8cff;
+            --danger: #ff5c5c;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            background: var(--bg);
+            /* color: #e6eefb */
+        }
+
+        /* 顶部条 */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, #6f7a95, #45484f)
+        }
+
+        .brand {
+            font-weight: 700
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px
+        }
+
+        button {
+            border: 1px solid var(--border);
+            background: #2a3a5e;
+            color: #e6eefb;
+            padding: 2px 4px;
+            border-radius: 10px;
+            cursor: pointer
+        }
+
+        button:hover {
+            background: #0d1526
+        }
+
+        .primary {
+            background: var(--accent);
+            border-color: transparent;
+            color: #fff
+        }
+
+        .danger {
+            border-color: #3a2130;
+            color: #ffb1bd;
+            background: #6a485c
+        }
+
+        main {
+            max-width: 100vw;
+            margin: 16px auto;
+            padding: 14px
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 3px 6px;
+            border-bottom: 1px solid var(--border);
+            text-align: left
+        }
+
+        th {
+            color: var(--muted);
+            background: #efefef;
+            position: sticky;
+            top: 48px;
+            z-index: 1
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 12px
+        }
+
+        .good {
+            color: #86ffd5;
+            border-color: #154235
+        }
+
+        .bad {
+            color: #ffb5bf;
+            border-color: #402028
+        }
+
+        .nowrap {
+            white-space: nowrap
+        }
+
+        /* dialog */
+        dialog {
+            border: none;
+            padding: 0;
+            background: transparent
+        }
+
+        .modal {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            min-width: min(560px, 96vw)
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px
+        }
+
+        .cols-2 {
+            grid-template-columns: 1fr 1fr
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            color: #cfe0ff
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            background: #e6eefb;
+            /* color: #e6eefb; */
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 10px
+        }
+
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        /* toast */
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #1b4636;
+            background: #14352a;
+            color: #92ffd9;
+            z-index: 5
+        }
+
+        #toast.err {
+            border-color: #53273b;
+            background: #3a2130;
+            color: #ffb5bf
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">TODO 管理台</div>
+        <div class="actions">
+            <button id="addBtn" class="primary">新增</button>
+            <button id="refreshBtn">刷新</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="panel">
+            <div class="toolbar">
+                <strong>任务列表</strong>
+                <div class="nowrap" style="color:var(--muted);font-size:12px">双击行可切换完成状态</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px">ID</th>
+                        <th>标题</th>
+                        <th style="width:80px">优先级</th>
+                        <th style="width:80px">完成</th>
+                        <th style="width:200px">截止</th>
+                        <th>备注</th>
+                        <th class="nowrap" style="width:80px">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- 新增/编辑对话框 -->
+    <dialog id="todoDialog">
+        <form method="dialog" class="modal" id="todoForm">
+            <h3 id="dlgTitle" style="margin:4px 0 8px">新增任务</h3>
+            <input type="hidden" id="todoId" />
+            <div class="grid">
+                <label>标题
+                    <input id="fTitle" required maxlength="120" />
+                </label>
+                <div class="cols-2">
+                    <label>优先级 (1-5)
+                        <select id="fPriority">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </label>
+                    <label>完成
+                        <select id="fDone">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </label>
+                </div>
+                <label>截止时间
+                    <input type="datetime-local" id="fDue" />
+                </label>
+                <label>备注
+                    <textarea id="fNotes" rows="3" maxlength="500"></textarea>
+                </label>
+            </div>
+            <div class="footer">
+                <button type="button" id="cancelBtn">取消</button>
+                <button class="primary" id="saveBtn" value="default">保存</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        // === 配置：按需修改 API 根路径 ===
+        const API_BASE = 'http://localhost:8080';
+        const $ = (s) => document.querySelector(s);
+        const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+        function toast(msg, isErr = false) {
+            let el = document.getElementById('toast');
+            if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+            el.className = isErr ? 'err' : '';
+            el.textContent = msg; clearTimeout(window.__t); el.style.display = 'block';
+            window.__t = setTimeout(() => el.remove(), 2200);
+        }
+
+        function api(path, opts = {}) {
+            const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+            return fetch(API_BASE + path, Object.assign({}, opts, { headers }))
+                .then(async res => {
+                    if (!res.ok) { let m = 'HTTP ' + res.status; try { const j = await res.json(); if (j && j.error) m += ' - ' + j.error; } catch { }; throw new Error(m) }
+                    const ct = res.headers.get('Content-Type') || '';
+                    return ct.includes('application/json') ? res.json() : res.text();
+                });
+        }
+
+        function fmtDue(s) { if (!s) return ''; const d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString(); }
+        function toLocalInput(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+        function localToISO(s) { if (!s) return null; const d = new Date(s); if (isNaN(d)) return null; return d.toISOString(); }
+        function esc(s) { return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c])) }
+
+        async function loadList() {
+            try {
+                const data = await api('/todos');
+                console.log("dataaaa: ", data )
+                const items = data.data || data || [];
+                renderRows(items);
+            } catch (e) { toast('加载失败：' + e.message, true); }
+        }
+
+        function renderRows(items) {
+            const tbody = document.getElementById('tbody');
+            tbody.innerHTML = '';
+            if (!items.length) {
+                const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="7" style="color:var(--muted);text-align:center">暂无数据</td>'; tbody.appendChild(tr); return;
+            }
+            for (const it of items) {
+                const tr = document.createElement('tr');
+                const badge = it.Done ? '<span class="badge good">已完成</span>' : '<span class="badge bad">未完成</span>';
+                tr.innerHTML = `
+          <td>${it.ID}</td>
+          <td>${esc(it.Title)}</td>
+          <td>${it.Priority ?? ''}</td>
+          <td>${badge}</td>
+          <td>${fmtDue(it.Duedate)}</td>
+          <td>${esc(it.Notes)}</td>
+          <td class='nowrap'>
+            <button data-a='edit' data-id='${it.ID}'>编辑</button>
+            <button class='danger' data-a='del' data-id='${it.ID}'>删除</button>
+          </td>`;
+                tr.addEventListener('dblclick', () => toggleDone(it));
+                tbody.appendChild(tr);
+            }
+        }
+
+        async function toggleDone(it) {
+            try { await api(`/todos/${it.ID}`, { method: 'PATCH', body: JSON.stringify({ Done: !it.Done }) }); await loadList(); }
+            catch (e) { toast('切换失败：' + e.message, true); }
+        }
+
+        function openAdd() {
+            $('#dlgTitle').textContent = '新增任务';
+            $('#todoId').value = '';
+            $('#fTitle').value = '';
+            $('#fPriority').value = '3';
+            $('#fDone').value = 'false';
+            $('#fDue').value = '';
+            $('#fNotes').value = '';
+            document.getElementById('todoDialog').showModal();
+        }
+
+        async function openEdit(id) {
+            try {
+                const d = await api(`/todos/${id}`);
+                const it = d.data || d;
+                $('#dlgTitle').textContent = '编辑任务';
+                $('#todoId').value = it.ID;
+                $('#fTitle').value = it.Title || '';
+                $('#fPriority').value = String(it.Priority ?? 3);
+                $('#fDone').value = String(!!it.Done);
+                $('#fDue').value = toLocalInput(it.Duedate);
+                $('#fNotes').value = it.Notes || '';
+                document.getElementById('todoDialog').showModal();
+            } catch (e) { toast('加载详情失败：' + e.message, true); }
+        }
+
+        function closeDialog() { document.getElementById('todoDialog').close(); }
+
+        async function saveFromDialog(ev) {
+            ev.preventDefault();
+            const id = $('#todoId').value.trim();
+            const body = {
+                Title: $('#fTitle').value.trim(),
+                Priority: Number($('#fPriority').value),
+                Done: $('#fDone').value === 'true',
+                Duedate: localToISO($('#fDue').value), // null 代表不设置/清空
+                Notes: $('#fNotes').value.trim(),
+            };
+            console.log("bodyyyy: ", body )
+            if (!body.Title) { toast('标题必填', true); return; }
+            try {
+                if (id) {
+                    await api(`/todos/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+                } else {
+                    await api('/todos', { method: 'POST', body: JSON.stringify(body) });
+                }
+                closeDialog(); toast(id ? '已更新' : '已创建'); await loadList();
+            } catch (e) { toast('保存失败：' + e.message, true); }
+        }
+
+        async function removeItem(id) {
+            if (!confirm('确定要删除吗？')) return;
+            try { await api(`/todos/${id}`, { method: 'DELETE' }); toast('已删除'); await loadList(); }
+            catch (e) { toast('删除失败：' + e.message, true); }
+        }
+
+        // 事件绑定
+        document.getElementById('addBtn').addEventListener('click', openAdd);
+        document.getElementById('refreshBtn').addEventListener('click', loadList);
+        document.getElementById('cancelBtn').addEventListener('click', closeDialog);
+        document.getElementById('todoForm').addEventListener('submit', saveFromDialog);
+
+        document.getElementById('tbody').addEventListener('click', (e) => {
+            const btn = e.target.closest('button'); if (!btn) return;
+            const id = Number(btn.getAttribute('data-id'));
+            const a = btn.getAttribute('data-a');
+            if (a === 'edit') openEdit(id);
+            if (a === 'del') removeItem(id);
+        });
+
+        // 首屏加载
+        loadList();
+    </script>
+</body>
+
+</html>
