@@ -10,7 +10,7 @@
             --bg: #fefefe;
             --panel: #fefefe;
             --muted: #8aa0bf;
-            --border: #24324b;
+            --border: #c9cfda;
             --accent: #4f8cff;
             --danger: #ff5c5c;
         }
@@ -25,24 +25,6 @@
             background: var(--bg);
             /* color: #e6eefb */
         }
-
-        /* 顶部条 */
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            background: linear-gradient(180deg, #6f7a95, #45484f)
-        }
-
-        .brand {
-            font-weight: 700
-        }
-
         .actions {
             display: flex;
             gap: 8px
@@ -52,7 +34,7 @@
             border: 1px solid var(--border);
             background: #2a3a5e;
             color: #e6eefb;
-            padding: 2px 4px;
+            padding: 2px 6px;
             border-radius: 10px;
             cursor: pointer
         }
@@ -75,7 +57,7 @@
 
         main {
             max-width: 100vw;
-            margin: 16px auto;
+            margin: 0 auto;
             padding: 14px
         }
 
@@ -87,24 +69,34 @@
             border-bottom: 1px solid var(--border)
         }
 
+        .toolbar .filter_bar {
+            display: flex;
+            gap: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse
+        }
+
+        #tbody tr:hover {
+            background: #f6f6fb
         }
 
         th,
         td {
             padding: 3px 6px;
             border-bottom: 1px solid var(--border);
-            text-align: left
+            text-align: left;
+            max-width: 600px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
         }
 
         th {
             color: var(--muted);
             background: #efefef;
-            position: sticky;
-            top: 48px;
-            z-index: 1
         }
 
         .badge {
@@ -159,9 +151,9 @@
             color: #cfe0ff
         }
 
-        input,
-        select,
-        textarea {
+        #todoDialog input,
+        #todoDialog select,
+        #todoDialog textarea {
             width: 100%;
             background: #e6eefb;
             /* color: #e6eefb; */
@@ -181,7 +173,7 @@
         #toast {
             position: fixed;
             left: 50%;
-            bottom: 18px;
+            bottom: 50%;
             transform: translateX(-50%);
             padding: 10px 14px;
             border-radius: 12px;
@@ -196,22 +188,61 @@
             background: #3a2130;
             color: #ffb5bf
         }
+
+        /* === pagination (bottom-right) === */
+        .pager {
+            float: right;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 10px;
+            padding: 6px 8px;
+        }
+
+        .pager button {
+            padding: 4px 8px;
+            width: 80px;
+        }
+
+        .pager select {
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            width: 120px;
+        }
+
+        .pager .muted {
+            color: #666;
+            font-size: 12px;
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="brand">TODO 管理台</div>
-        <div class="actions">
-            <button id="addBtn" class="primary">新增</button>
-            <button id="refreshBtn">刷新</button>
-        </div>
-    </header>
-
     <main>
         <div class="panel">
             <div class="toolbar">
                 <strong>任务列表</strong>
+                <div class="filter_bar" id="filters">
+                    <input id="filterTitle" placeholder="标题关键词" />
+                    <input id="filterNotes" placeholder="备注关键词" />
+                    <select id="filterDone" title="完成状态">
+                        <option value="">全部</option>
+                        <option value="false">未完成</option>
+                        <option value="true">已完成</option>
+                    </select>
+                    <select id="filterSort" title="排序">
+                        <option value="-id">最新</option>
+                        <option value="id">最早</option>
+                        <option value="-priority">优先级 高→低</option>
+                        <option value="priority">优先级 低→高</option>
+                        <option value="-createdAt">创建 新→旧</option>
+                        <option value="createdAt">创建 旧→新</option>
+                    </select>
+                    <div class="actions">
+                        <button id="refreshBtn" class="primary">刷新</button>
+                        <button id="addBtn" class="primary">新增</button>
+                    </div>
+                </div>
                 <div class="nowrap" style="color:var(--muted);font-size:12px">双击行可切换完成状态</div>
             </div>
             <table>
@@ -228,6 +259,18 @@
                 </thead>
                 <tbody id="tbody"></tbody>
             </table>
+            <div class="pager" id="pager">
+                <button id="pgPrev" class="primary">« 上一页</button>
+                <span class="muted" id="pgInfo">第 1 / 1 页 · 共 0 条</span>
+                <button id="pgNext" class="primary">下一页 »</button>
+                <select id="pgSize" title="每页条数">
+                    <option>5</option>
+                    <option selected>10</option>
+                    <option>20</option>
+                    <option>50</option>
+                </select>
+            </div>
+
         </div>
     </main>
 
@@ -294,6 +337,95 @@
                     return ct.includes('application/json') ? res.json() : res.text();
                 });
         }
+        // 分页状态
+        const state = {
+            page: 1,
+            pageSize: 10,
+            total: 0,
+            title: '',
+            notes: '',
+            done: '',     // '', 'true', 'false'
+            sort: '-id',
+        };
+        // URL <-> state 同步（可分享链接、刷新不丢）
+        function stateFromURL() {
+            const qs = new URLSearchParams(location.search);
+            state.page = Number(qs.get('page') || state.page) || 1;
+            state.pageSize = Number(qs.get('pageSize') || state.pageSize) || 10;
+            state.title = qs.get('title') ?? '';
+            state.notes = qs.get('notes') ?? '';
+            state.done = qs.get('done') ?? '';
+            state.sort = qs.get('sort') || state.sort;
+        }
+        function syncUIFromState() {
+            document.getElementById('filterTitle').value = state.title;
+            document.getElementById('filterNotes').value = state.notes;
+            document.getElementById('filterDone').value = state.done;
+            document.getElementById('filterSort').value = state.sort;
+        }
+        function syncURLFromState() {
+            const qs = new URLSearchParams();
+            qs.set('page', state.page);
+            qs.set('pageSize', state.pageSize);
+            if (state.title) qs.set('title', state.title);
+            if (state.notes) qs.set('notes', state.notes);
+            if (state.done) qs.set('done', state.done);
+            if (state.sort) qs.set('sort', state.sort);
+            history.replaceState(null, '', `?${qs.toString()}`);
+        }
+        // 统一的查询字符串构建器
+        function buildQuery() {
+            const qs = new URLSearchParams();
+            qs.set('page', state.page);
+            qs.set('pageSize', state.pageSize);
+            if (state.title) qs.set('title', state.title);
+            if (state.notes) qs.set('notes', state.notes);
+            if (state.done) qs.set('done', state.done);
+            if (state.sort) qs.set('sort', state.sort);
+            return qs.toString();
+        }
+
+        function renderPager() {
+            const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
+            const info = `第 ${state.page} / ${pages} 页 · 共 ${state.total} 条`;
+            document.getElementById('pgInfo').textContent = info;
+            document.getElementById('pgPrev').disabled = state.page <= 1;
+            document.getElementById('pgNext').disabled = state.page >= pages;
+            document.getElementById('pgSize').value = String(state.pageSize);
+        }
+
+        async function gotoPage(p) {
+            const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
+            state.page = Math.min(Math.max(1, p), pages);
+            await loadList();
+        }
+        // 事件绑定（过滤变更 → 回到第 1 页 → 发起查询）
+        const debounce = (fn, ms = 300) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); } };
+
+        document.getElementById('filterTitle').addEventListener('input', debounce(() => {
+            state.title = document.getElementById('filterTitle').value.trim();
+            state.page = 1; loadList();
+        }));
+        document.getElementById('filterNotes').addEventListener('input', debounce(() => {
+            state.notes = document.getElementById('filterNotes').value.trim();
+            state.page = 1; loadList();
+        }));
+        document.getElementById('filterDone').addEventListener('change', () => {
+            state.done = document.getElementById('filterDone').value;
+            state.page = 1; loadList();
+        });
+        document.getElementById('filterSort').addEventListener('change', () => {
+            state.sort = document.getElementById('filterSort').value;
+            state.page = 1; loadList();
+        });
+        // 事件绑定（放在现有“事件绑定”附近也可）
+        document.getElementById('pgPrev').addEventListener('click', () => gotoPage(state.page - 1));
+        document.getElementById('pgNext').addEventListener('click', () => gotoPage(state.page + 1));
+        document.getElementById('pgSize').addEventListener('change', () => {
+            state.pageSize = Number(document.getElementById('pgSize').value) || 10;
+            state.page = 1;
+            loadList();
+        });
 
         function fmtDue(s) { if (!s) return ''; const d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString(); }
         function toLocalInput(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
@@ -302,10 +434,16 @@
 
         async function loadList() {
             try {
-                const data = await api('/todos');
-                console.log("dataaaa: ", data )
+                syncURLFromState();
+                const data = await api(`/todos?${buildQuery()}`);
                 const items = data.data || data || [];
+                // 同步后端分页结果（若未返回则维持原值）
+                state.total = Number(data.total ?? state.total ?? items.length);
+                state.page = Number(data.page ?? state.page);
+                state.pageSize = Number(data.pageSize ?? state.pageSize);
                 renderRows(items);
+                renderPager();
+
             } catch (e) { toast('加载失败：' + e.message, true); }
         }
 
@@ -324,9 +462,9 @@
           <td>${it.Priority ?? ''}</td>
           <td>${badge}</td>
           <td>${fmtDue(it.Duedate)}</td>
-          <td>${esc(it.Notes)}</td>
+          <td title=${it.Notes}>${esc(it.Notes)}</td>
           <td class='nowrap'>
-            <button data-a='edit' data-id='${it.ID}'>编辑</button>
+            <button class='primary' data-a='edit' data-id='${it.ID}'>编辑</button>
             <button class='danger' data-a='del' data-id='${it.ID}'>删除</button>
           </td>`;
                 tr.addEventListener('dblclick', () => toggleDone(it));
@@ -335,7 +473,7 @@
         }
 
         async function toggleDone(it) {
-            try { await api(`/todos/${it.ID}`, { method: 'PATCH', body: JSON.stringify({ Done: !it.Done }) }); await loadList(); }
+            try { await api(`/todos/${it.ID}`, { method: 'PATCH', body: JSON.stringify({ ...it, Done: !it.Done }) }); await loadList(); }
             catch (e) { toast('切换失败：' + e.message, true); }
         }
 
@@ -377,7 +515,6 @@
                 Duedate: localToISO($('#fDue').value), // null 代表不设置/清空
                 Notes: $('#fNotes').value.trim(),
             };
-            console.log("bodyyyy: ", body )
             if (!body.Title) { toast('标题必填', true); return; }
             try {
                 if (id) {
@@ -409,7 +546,9 @@
             if (a === 'del') removeItem(id);
         });
 
-        // 首屏加载
+        // 初始化：从 URL 恢复 → 同步到 UI → 首次加载
+        stateFromURL();
+        syncUIFromState();
         loadList();
     </script>
 </body>
