@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -74,6 +78,49 @@ func parseBoolStr(s string) (bool, bool) {
 		return false, false
 	default:
 		return false, false
+	}
+}
+
+// 启动同级目录静态服务器并自动打开浏览器
+func startFrontend(frontFile string, addr string) {
+	fmt.Println("fileee: ", frontFile, " addrrr: ", addr)
+	// 1) 检查文件是否存在
+	wd, _ := os.Getwd()
+	abs := filepath.Join(wd, frontFile)
+	_, err := os.Stat(abs)
+	if err != nil {
+		// 如果没找到文件，只提示，不影响后端 API 启动
+		println("[frontend] 未找到文件：", abs)
+		return
+	}
+	// 2) 启动静态文件服务器（服务整个工作目录）
+	go func() {
+		fs := http.FileServer(http.Dir(wd))
+		srv := &http.Server{Addr: addr, Handler: fs}
+		println("[frontend] 静态服务器已启动： http://localhost" + addr + "/" + frontFile)
+		err := srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			println("[frontend] 静态服务器启动失败：", err.Error())
+		}
+	}()
+	// 3) 稍等片刻再打开浏览器
+	go func() {
+		time.Sleep(400 * time.Millisecond)
+		_ = openBrowser("http://localhost" + addr + "/" + frontFile)
+	}()
+}
+
+// 跨平台打开默认浏览器
+func openBrowser(url string) error {
+	switch runtime.GOOS {
+	case "windows":
+		// 两种方式都可以，任选其一：
+		// return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+		return exec.Command("cmd", "/c", "start", url).Start()
+	case "darwin":
+		return exec.Command("open", url).Start()
+	default: // linux, freebsd, etc.
+		return exec.Command("xdg-open", url).Start()
 	}
 }
 
@@ -302,6 +349,8 @@ func main() {
 		ctx.JSON(200, gin.H{"code": 200, "msg": "delete success"})
 	})
 
+	// ★ 新增：启动前端并打开浏览器（默认 http://localhost:5173/todoIndex.html）
+	startFrontend("todoIndex.html", ":5173")
 	runErr := r.Run(":8080")
 	if runErr != nil {
 		log.Fatal(runErr)
