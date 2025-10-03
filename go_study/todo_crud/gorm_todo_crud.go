@@ -124,10 +124,11 @@ func main() {
 		ctx.JSON(200, gin.H{"code": 200, "ok": true})
 	})
 	// ===== 路由：TODO API =====
-	// 列表：支持 q(搜索)、done(布尔)、排序 sort、分页 page/pageSize
+	// 列表：支持 title/notes(搜索)、done(布尔)、排序 sort、分页 page/pageSize
 	r.GET("/todos", func(c *gin.Context) {
 		var (
-			q           = c.Query("q")
+			title       = c.Query("title")
+			notes       = c.Query("notes")
 			page, _     = strconv.Atoi(c.DefaultQuery("page", "1"))
 			pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 			sort        = c.DefaultQuery("sort", "-id") // id,-id,createdAt,-createdAt,priority,-priority
@@ -142,8 +143,8 @@ func main() {
 		if page <= 0 {
 			page = 1
 		}
-		if pageSize < 0 || pageSize > 100 {
-			pageSize = 1
+		if pageSize <= 0 || pageSize > 100 {
+			pageSize = 10
 		}
 		offset = (page - 1) * pageSize
 		if doneParam != "" {
@@ -173,10 +174,14 @@ func main() {
 		}
 
 		tx := db.Model(&Todo{})
-		if q != "" {
-			like := "%" + q + "%"
-			tx = tx.Where("title LIKE ? OR notes LKIE ?", like, like)
+
+		if title != "" {
+			tx = tx.Where("title LIKE ?", "%"+title+"%")
 		}
+		if notes != "" {
+			tx = tx.Where("notes LIKE ?", "%"+notes+"%")
+		}
+
 		if doneFilter != nil {
 			tx = tx.Where("done = ?", *doneFilter)
 		}
