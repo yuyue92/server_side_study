@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>用户主从信息 CRUD 示例</title>
+    <style>
+        :root {
+            --gap: 12px;
+            --radius: 12px
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            margin: 0;
+            background: #f7f7f8;
+            color: #222
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 14px 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--gap);
+            align-items: center
+        }
+
+        header h1 {
+            font-size: 18px;
+            margin: 0;
+            margin-right: auto
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--gap)
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            font: inherit
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            min-width: 140px
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            background: #fff;
+            cursor: pointer
+        }
+
+        button.primary {
+            background: #111;
+            color: #fff;
+            border-color: #111
+        }
+
+        button.danger {
+            background: #ffeded;
+            color: #b10000;
+            border-color: #ffbebe
+        }
+
+        main {
+            padding: 18px
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: var(--radius);
+            padding: 14px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            vertical-align: top
+        }
+
+        th {
+            font-weight: 600;
+            color: #444;
+            background: #fafafa
+        }
+
+        .muted {
+            opacity: .65
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px
+        }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 12px
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid #ddd
+        }
+
+        .status-active {
+            background: #e8fff1;
+            border-color: #b9f4d0;
+            color: #0b7a3a
+        }
+
+        .status-inactive {
+            background: #fff7e6;
+            border-color: #ffe1ae;
+            color: #8a5a00
+        }
+
+        .status-suspended {
+            background: #ffe8e8;
+            border-color: #ffc8c8;
+            color: #b10000
+        }
+
+        /* Dialog */
+        dialog {
+            border: none;
+            border-radius: 16px;
+            width: min(920px, 95vw);
+            padding: 0;
+            overflow: hidden
+        }
+
+        .dialog-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #eee;
+            background: #fafafa
+        }
+
+        .dialog-body {
+            padding: 16px;
+            max-height: 70vh;
+            overflow: auto
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px
+        }
+
+        .col-6 {
+            grid-column: span 6
+        }
+
+        .col-4 {
+            grid-column: span 4
+        }
+
+        .col-3 {
+            grid-column: span 3
+        }
+
+        .col-12 {
+            grid-column: span 12
+        }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%
+        }
+
+        .dialog-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+            background: #fafafa
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #eee
+        }
+
+        .nowrap {
+            white-space: nowrap
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px 4px 0 0;
+            background: #f0f0f0;
+            border-radius: 999px;
+            font-size: 12px
+        }
+
+        .help {
+            font-size: 12px;
+            color: #777
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>用户主从信息管理（Fiber + SQLite）</h1>
+        <div class="controls">
+            <input id="q_name" placeholder="按姓名搜索" />
+            <input id="q_email" placeholder="按邮箱搜索" />
+            <select id="q_status">
+                <option value="">全部状态</option>
+                <option value="active">active</option>
+                <option value="inactive">inactive</option>
+                <option value="suspended">suspended</option>
+            </select>
+            <select id="q_pagesize">
+                <option>5</option>
+                <option selected>10</option>
+                <option>20</option>
+                <option>50</option>
+            </select>
+            <button id="btnSearch">搜索</button>
+            <button id="btnCreate" class="primary">+ 新建用户</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="card">
+            <div style="overflow:auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="nowrap">ID</th>
+                            <th>用户</th>
+                            <th>邮箱</th>
+                            <th>状态</th>
+                            <th>城市</th>
+                            <th>技能</th>
+                            <th style="width:140px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <span class="muted" id="pg_info">第 1/1 页，共 0 条</span>
+                <button id="prev">上一页</button>
+                <button id="next">下一页</button>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="dlg">
+        <form method="dialog" id="formUser">
+            <div class="dialog-head">
+                <strong id="dlg_title">新建用户</strong>
+                <button type="button" id="dlg_close">×</button>
+            </div>
+            <div class="dialog-body">
+                <div class="grid">
+                    <div class="field col-6">
+                        <label>姓名 *</label>
+                        <input name="name" required />
+                    </div>
+                    <div class="field col-3">
+                        <label>年龄 *</label>
+                        <input name="age" type="number" min="0" max="150" required />
+                    </div>
+                    <div class="field col-3">
+                        <label>状态 *</label>
+                        <select name="status" required>
+                            <option value="active">active</option>
+                            <option value="inactive">inactive</option>
+                            <option value="suspended">suspended</option>
+                        </select>
+                    </div>
+
+                    <div class="field col-6">
+                        <label>邮箱 *</label>
+                        <input name="email" type="email" required />
+                    </div>
+                    <div class="field col-6">
+                        <label>电话</label>
+                        <input name="phone" />
+                    </div>
+
+                    <div class="field col-12">
+                        <label>住址</label>
+                        <input name="address" />
+                    </div>
+                    <div class="field col-4">
+                        <label>城市</label>
+                        <input name="city" />
+                    </div>
+                    <div class="field col-4">
+                        <label>国家/地区</label>
+                        <input name="country" />
+                    </div>
+                    <div class="field col-4">
+                        <label>邮编</label>
+                        <input name="postal_code" />
+                    </div>
+
+                    <div class="field col-4">
+                        <label>性别</label>
+                        <select name="gender">
+                            <option value="">-</option>
+                            <option value="male">male</option>
+                            <option value="female">female</option>
+                            <option value="other">other</option>
+                        </select>
+                    </div>
+                    <div class="field col-4">
+                        <label>生日</label>
+                        <input name="birthday" type="date" />
+                    </div>
+                    <div class="field col-4">
+                        <label>头像 URL</label>
+                        <input name="avatar" placeholder="https://..." />
+                    </div>
+
+                    <div class="field col-6">
+                        <label>职业</label>
+                        <input name="occupation" />
+                    </div>
+                    <div class="field col-6">
+                        <label>公司</label>
+                        <input name="company" />
+                    </div>
+
+                    <div class="field col-4">
+                        <label>网站</label>
+                        <input name="website" placeholder="https://..." />
+                    </div>
+                    <div class="field col-4">
+                        <label>GitHub</label>
+                        <input name="github" placeholder="username" />
+                    </div>
+                    <div class="field col-4">
+                        <label>LinkedIn</label>
+                        <input name="linkedin" placeholder="slug" />
+                    </div>
+
+                    <div class="field col-6">
+                        <label>技能（逗号分隔）</label>
+                        <input name="skills" placeholder="Go,React,SQLite" />
+                    </div>
+                    <div class="field col-6">
+                        <label>兴趣（逗号分隔）</label>
+                        <input name="interests" placeholder="Hiking,Reading" />
+                    </div>
+
+                    <div class="field col-12">
+                        <label>简介</label>
+                        <textarea name="bio" rows="3"></textarea>
+                        <div class="help">带 * 为必填。保存后可在列表直接看到主信息；更多详情可通过表单再次编辑。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-foot">
+                <button type="button" id="btnDelete" class="danger" style="display:none">删除</button>
+                <div style="flex:1"></div>
+                <button type="button" id="btnCancel">取消</button>
+                <button type="submit" class="primary" id="btnSubmit">保存</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        // ============================
+        // API 适配层
+        // ============================
+        /**
+         * 根据你的后端路由选择模式：
+         *  - 'combined'：单一 /users 或 /api/users 接口，返回/接收内嵌 profile（推荐）
+         *  - 'split'   ：/users 与 /user_profiles 分离
+         */
+        const API_MODE = 'combined'; // 'combined' | 'split'
+
+        // 如你的 Fiber 代码挂在 /api 下，把 BASE_USERS 改为 '/api/users'
+        const BASE_USERS = 'http://localhost:3000/api/users'; // 或 '/users'
+        const BASE_PROFILES = '/api/user_profiles'; // 分表模式才会用到
+
+        const api = {
+            async list({ page = 1, pagesize = 10, name = '', email = '', status = '' } = {}) {
+                const p = new URLSearchParams({ page, pagesize });
+                if (name) p.set('name', name);
+                if (email) p.set('email', email);
+                if (status) p.set('status', status);
+                if (API_MODE === 'combined') p.set('include_profile', 'true');
+                const res = await fetch(`${BASE_USERS}?${p.toString()}`);
+                console.log("ressss: ", res  )
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async get(id) {
+                const res = await fetch(`${BASE_USERS}/${id}`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async create(user, profile) {
+                if (API_MODE === 'combined') {
+                    const payload = { ...user, profile };
+                    const res = await fetch(BASE_USERS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!res.ok) throw new Error(await res.text());
+                    return res.json();
+                } else {
+                    // 分表：先建 user，再建 profile（带 user_id）
+                    let res = await fetch(BASE_USERS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user) });
+                    if (!res.ok) throw new Error(await res.text());
+                    const created = await res.json();
+                    const uid = created.id || created.user_id || created.ID;
+                    const profilePayload = { ...profile, user_id: uid };
+                    res = await fetch(BASE_PROFILES, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profilePayload) });
+                    if (!res.ok) throw new Error(await res.text());
+                    created.profile = await res.json();
+                    return created;
+                }
+            },
+            async update(id, user, profile) {
+                if (API_MODE === 'combined') {
+                    const payload = { ...user, profile };
+                    const res = await fetch(`${BASE_USERS}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!res.ok) throw new Error(await res.text());
+                    return res.json();
+                } else {
+                    let res = await fetch(`${BASE_USERS}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user) });
+                    if (!res.ok) throw new Error(await res.text());
+                    const updatedUser = await res.json();
+
+                    // 查询是否已有 profile（若后端不支持 get by user_id，可在列表缓存）
+                    const profilePayload = { ...profile, user_id: id };
+                    res = await fetch(`${BASE_PROFILES}/by-user/${id}`);
+                    if (res.ok) {
+                        const existing = await res.json();
+                        const pid = existing.id || existing.profile_id || existing.ID;
+                        res = await fetch(`${BASE_PROFILES}/${pid}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profilePayload) });
+                        if (!res.ok) throw new Error(await res.text());
+                        updatedUser.profile = await res.json();
+                    } else {
+                        // 不存在就创建
+                        res = await fetch(BASE_PROFILES, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profilePayload) });
+                        if (!res.ok) throw new Error(await res.text());
+                        updatedUser.profile = await res.json();
+                    }
+                    return updatedUser;
+                }
+            },
+            async remove(id) {
+                const res = await fetch(`${BASE_USERS}/${id}`, { method: 'DELETE' });
+                if (!res.ok && res.status !== 204) throw new Error(await res.text());
+                return true;
+            }
+        };
+
+        // ============================
+        // UI 逻辑
+        // ============================
+        const tbody = document.getElementById('tbody');
+        const pgInfo = document.getElementById('pg_info');
+        const btnPrev = document.getElementById('prev');
+        const btnNext = document.getElementById('next');
+        const qName = document.getElementById('q_name');
+        const qEmail = document.getElementById('q_email');
+        const qStatus = document.getElementById('q_status');
+        const qPageSize = document.getElementById('q_pagesize');
+
+        let page = 1, pages = 1;
+
+        document.getElementById('btnSearch').addEventListener('click', () => { page = 1; load(); });
+        document.getElementById('btnCreate').addEventListener('click', () => openDialog());
+
+        btnPrev.addEventListener('click', () => { if (page > 1) { page--; load(); } });
+        btnNext.addEventListener('click', () => { if (page < pages) { page++; load(); } });
+
+        function statusBadge(s) {
+            const cls = s === 'active' ? 'status-active' : (s === 'suspended' ? 'status-suspended' : 'status-inactive');
+            return `<span class="badge ${cls}">${s || '-'}</span>`
+        }
+
+        function renderRows(list) {
+            tbody.innerHTML = list.map(u => {
+                const p = u.profile || u.Profile || {};
+                const city = p.city || p.City || '';
+                const avatar = (p.avatar || '').trim();
+                const avatarImg = avatar ? `<img class="avatar" src="${avatar}" alt="">` : '<span class="avatar" style="background:#fafafa"></span>';
+                const skills = (p.skills || '').split(',').filter(Boolean).slice(0, 3).map(s => `<span class="chip">${s.trim()}</span>`).join('');
+                return `<tr>
+          <td class="nowrap">${u.id ?? u.ID ?? ''}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">${avatarImg}<div>
+              <div><strong>${u.name || u.Name || ''}</strong></div>
+              <div class="muted">${p.phone || ''}</div>
+            </div></div>
+          </td>
+          <td>${u.email || ''}</td>
+          <td>${statusBadge(u.status || '')}</td>
+          <td>${city || ''}</td>
+          <td>${skills || ''}</td>
+          <td class="row-actions">
+            <button data-act="edit" data-id="${u.id ?? u.ID}">编辑</button>
+            <button data-act="del" data-id="${u.id ?? u.ID}" class="danger">删除</button>
+          </td>
+        </tr>`
+            }).join('');
+
+            // 行内事件
+            tbody.querySelectorAll('button[data-act="edit"]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    const data = await api.get(id);
+                    openDialog(data);
+                });
+            });
+            tbody.querySelectorAll('button[data-act="del"]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    if (confirm('确认删除该用户？此操作不可恢复')) {
+                        try { await api.remove(id); load(); } catch (e) { alert(e); }
+                    }
+                });
+            });
+        }
+
+        async function load() {
+            try {
+                const pagesize = Number(qPageSize.value || 10);
+                const resultObj = await api.list({
+                    page, pagesize, name: qName.value.trim(), email: qEmail.value.trim(), status: qStatus.value
+                });
+                console.log("resultObj: ", resultObj )
+                const { data = [], total = 0, page: pg = 1, totalPage = 1 } = resultObj
+                page = pg; pages = totalPage || 1;
+                renderRows(data);
+                pgInfo.textContent = `第 ${page}/${pages} 页，共 ${total} 条`;
+            } catch (e) { alert('加载失败：' + e); }
+        }
+
+        // ============================
+        // 表单对话框（创建/编辑）
+        // ============================
+        const dlg = document.getElementById('dlg');
+        const dlgTitle = document.getElementById('dlg_title');
+        const dlgClose = document.getElementById('dlg_close');
+        const btnCancel = document.getElementById('btnCancel');
+        const btnDelete = document.getElementById('btnDelete');
+        const form = document.getElementById('formUser');
+
+        function fillForm(data = {}) {
+            const u = data || {};
+            const p = u.profile || {};
+            form.dataset.id = u.id || u.ID || '';
+            form.name.value = u.name || '';
+            form.age.value = u.age ?? '';
+            form.status.value = u.status || 'active';
+            form.email.value = u.email || '';
+            form.phone.value = p.phone || '';
+            form.address.value = p.address || '';
+            form.city.value = p.city || '';
+            form.country.value = p.country || '';
+            form.postal_code.value = p.postal_code || '';
+            form.gender.value = p.gender || '';
+            form.birthday.value = p.birthday || '';
+            form.avatar.value = p.avatar || '';
+            form.occupation.value = p.occupation || '';
+            form.company.value = p.company || '';
+            form.website.value = p.website || '';
+            form.github.value = p.github || '';
+            form.linkedin.value = p.linkedin || '';
+            form.skills.value = p.skills || '';
+            form.interests.value = p.interests || '';
+            form.bio.value = p.bio || '';
+        }
+
+        function collect() {
+            const user = {
+                name: form.name.value.trim(),
+                age: Number(form.age.value || 0),
+                status: form.status.value,
+                email: form.email.value.trim(),
+            };
+            const profile = {
+                phone: form.phone.value.trim(),
+                address: form.address.value.trim(),
+                city: form.city.value.trim(),
+                country: form.country.value.trim(),
+                postal_code: form.postal_code.value.trim(),
+                gender: form.gender.value,
+                birthday: form.birthday.value,
+                avatar: form.avatar.value.trim(),
+                occupation: form.occupation.value.trim(),
+                company: form.company.value.trim(),
+                website: form.website.value.trim(),
+                github: form.github.value.trim(),
+                linkedin: form.linkedin.value.trim(),
+                skills: form.skills.value.trim(),
+                interests: form.interests.value.trim(),
+                bio: form.bio.value.trim(),
+            };
+            return { user, profile };
+        }
+
+        function openDialog(data) {
+            if (data) {
+                dlgTitle.textContent = '编辑用户';
+                btnDelete.style.display = '';
+                fillForm(data);
+            } else {
+                dlgTitle.textContent = '新建用户';
+                btnDelete.style.display = 'none';
+                fillForm({});
+            }
+            dlg.showModal();
+        }
+
+        dlgClose.addEventListener('click', () => dlg.close());
+        btnCancel.addEventListener('click', () => dlg.close());
+
+        btnDelete.addEventListener('click', async () => {
+            const id = form.dataset.id;
+            if (!id) return;
+            if (confirm('确认删除该用户？')) {
+                try { await api.remove(id); dlg.close(); load(); } catch (e) { alert(e); }
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = form.dataset.id;
+            const { user, profile } = collect();
+            try {
+                if (id) { await api.update(id, user, profile); }
+                else { await api.create(user, profile); }
+                dlg.close();
+                load();
+            } catch (err) { alert('保存失败：' + err); }
+        });
+
+        // 首次加载
+        load();
+    </script>
+</body>
+
+</html>
