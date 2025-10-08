@@ -60,6 +60,13 @@ func main() {
 	}))
 
 	app.Get("/", handleHome) // 3. 基础路由
+	// 4. 路由参数
+	app.Get("/hello/:name", func(c *fiber.Ctx) error {
+		cname := c.Params("name")
+		return c.JSON(fiber.Map{
+			"name": cname,
+		})
+	})
 	// 设置 Cookie--	// 12. Cookie 操作
 	app.Get("/cookie/set", func(c *fiber.Ctx) error {
 		c.Cookie(&fiber.Cookie{
