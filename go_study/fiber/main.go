@@ -114,6 +114,11 @@ func initDB() {
 		log.Fatal("数据库连接失败:", err)
 	}
 
+	// 开启外键（SQLite 默认关闭）
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		log.Fatal("开启外键失败:", err)
+	}
+
 	// 测试连接
 	if err = db.Ping(); err != nil {
 		log.Fatal("数据库 ping 失败:", err)
@@ -121,6 +126,12 @@ func initDB() {
 
 	// 创建表
 	createTables()
+
+	// —— 新增：初始化一批主从表演示数据（幂等）
+	if err := seedSampleData(); err != nil {
+		log.Fatal("插入测试数据失败:", err)
+	}
+
 	log.Println("✅ 数据库初始化成功")
 }
 
@@ -687,4 +698,120 @@ func customErrorHandler(c *fiber.Ctx, err error) error {
 		"error":     err.Error(),
 		"timestamp": time.Now().Unix(),
 	})
+}
+
+// seedSampleData 在空库时插入一批演示用户及其资料（幂等）
+func seedSampleData() error {
+	// 若已有数据，直接跳过
+	var cnt int
+	if err := db.QueryRow("SELECT COUNT(*) FROM users").Scan(&cnt); err != nil {
+		return err
+	}
+	if cnt > 0 {
+		log.Printf("跳过测试数据插入：当前已有 %d 个用户\n", cnt)
+		return nil
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	type pair struct {
+		User    User
+		Profile UserProfile
+	}
+
+	now := time.Now().Format("2006-01-02")
+	data := []pair{
+		{
+			User: User{Name: "Alice Chen", Age: 26, Email: "alice@example.com", Status: "active"},
+			Profile: UserProfile{
+				Phone: "13800000001", Address: "虹口区东大名路 100 号", City: "Shanghai", Country: "CN",
+				PostalCode: "200080", Bio: "前端工程师，热爱开源与设计系统", Avatar: "https://img.example.com/alice.png",
+				Gender: "female", Birthday: "1999-03-15", Occupation: "Frontend Engineer", Company: "Acme Tech",
+				Website: "https://alice.dev", GitHub: "alice", LinkedIn: "alice-chen", Skills: "JS,TS,React,Go",
+				Interests: "Hiking,Reading,Photography",
+			},
+		},
+		{
+			User: User{Name: "Bob Li", Age: 32, Email: "bob@example.com", Status: "inactive"},
+			Profile: UserProfile{
+				Phone: "13800000002", Address: "海淀区中关村大街 1 号", City: "Beijing", Country: "CN",
+				PostalCode: "100080", Bio: "后端开发，关注高并发与可观测性", Avatar: "https://img.example.com/bob.png",
+				Gender: "male", Birthday: "1993-11-02", Occupation: "Backend Engineer", Company: "ServicePlus",
+				Website: "https://bob.engineer", GitHub: "bob-li", LinkedIn: "bob-li",
+				Skills: "Go,GRPC,Redis,PostgreSQL", Interests: "Running,BoardGames",
+			},
+		},
+		{
+			User: User{Name: "Carol Wang", Age: 29, Email: "carol@example.com", Status: "suspended"},
+			Profile: UserProfile{
+				Phone: "13800000003", Address: "天府大道 8 号", City: "Chengdu", Country: "CN",
+				PostalCode: "610000", Bio: "全栈工程师，偏好 TypeScript & Go", Avatar: "https://img.example.com/carol.png",
+				Gender: "female", Birthday: "1996-07-21", Occupation: "Fullstack Dev", Company: "NextWave",
+				Website: "https://carol.codes", GitHub: "carolw", LinkedIn: "carol-wang",
+				Skills: "Vue,Node,Go,SQLite", Interests: "Cooking,Travel",
+			},
+		},
+		{
+			User: User{Name: "David Zhou", Age: 35, Email: "david@example.com", Status: "active"},
+			Profile: UserProfile{
+				Phone: "13800000004", Address: "南山区科技园南区", City: "Shenzhen", Country: "CN",
+				PostalCode: "518000", Bio: "架构师，关注服务治理与成本优化", Avatar: "https://img.example.com/david.png",
+				Gender: "male", Birthday: "1990-01-05", Occupation: "Architect", Company: "CloudBridge",
+				Website: "https://davidz.dev", GitHub: "davidz", LinkedIn: "david-zhou",
+				Skills: "Kubernetes,Go,MySQL", Interests: "Cycling,Chess",
+			},
+		},
+		{
+			User: User{Name: "Erin Sun", Age: 23, Email: "erin@example.com", Status: "active"},
+			Profile: UserProfile{
+				Phone: "13800000005", Address: "西湖区文三路 88 号", City: "Hangzhou", Country: "CN",
+				PostalCode: "310000", Bio: "实习生，专注数据可视化", Avatar: "https://img.example.com/erin.png",
+				Gender: "other", Birthday: "2002-05-30", Occupation: "Intern", Company: "VizLab",
+				Website: "https://erin.viz", GitHub: "erin-s", LinkedIn: "erin-sun",
+				Skills: "D3.js,React,Go", Interests: "Movies,Sketching",
+			},
+		},
+	}
+
+	// 插入 users + user_profiles
+	for _, p := range data {
+		res, err := tx.Exec(
+			`INSERT INTO users (name, age, email, status, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?)`,
+			p.User.Name, p.User.Age, p.User.Email, p.User.Status, time.Now(), time.Now(),
+		)
+		if err != nil {
+			return fmt.Errorf("插入用户 %s 失败: %w", p.User.Email, err)
+		}
+		uid, _ := res.LastInsertId()
+
+		_, err = tx.Exec(`
+			INSERT INTO user_profiles
+			(user_id, phone, address, city, country, postal_code,
+			 bio, avatar, gender, birthday, occupation, company,
+			 website, github, linkedin, skills, interests, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			uid, p.Profile.Phone, p.Profile.Address, p.Profile.City, p.Profile.Country,
+			p.Profile.PostalCode, p.Profile.Bio, p.Profile.Avatar, p.Profile.Gender,
+			p.Profile.Birthday, p.Profile.Occupation, p.Profile.Company, p.Profile.Website,
+			p.Profile.GitHub, p.Profile.LinkedIn, p.Profile.Skills, p.Profile.Interests,
+			now, now,
+		)
+		if err != nil {
+			return fmt.Errorf("为用户 %s 插入资料失败: %w", p.User.Email, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	log.Printf("✅ 已插入测试数据：%d 位用户（含资料）\n", len(data))
+	return nil
 }
