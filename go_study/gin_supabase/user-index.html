@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background-color: #e0a800;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background-color: #c82333;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #5a6268;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+            margin: 0 3px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            transition: border-color 0.15s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-control.is-invalid~.invalid-feedback {
+            display: block;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: #f8f9fa;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: 300;
+            color: #6c757d;
+            cursor: pointer;
+            border: none;
+            background: none;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 3px;
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .badge-primary {
+            background-color: #007bff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>👥 用户管理系统</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 提示消息 -->
+        <div id="alertMessage" class="alert"></div>
+
+        <!-- 操作面板 -->
+        <div class="card">
+            <div class="card-header">
+                <span>用户列表</span>
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                    ➕ 添加用户
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- 加载状态 -->
+                <div id="loadingState" class="loading">
+                    <div class="spinner"></div>
+                    <div>加载中...</div>
+                </div>
+
+                <!-- 表格 -->
+                <div id="tableContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>邮箱</th>
+                                    <th>姓名</th>
+                                    <th>电话</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 空状态 -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>暂无用户数据</h3>
+                    <p>点击上方"添加用户"按钮创建第一个用户</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建/编辑用户模态框 -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加用户</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+
+                    <div class="form-group">
+                        <label class="form-label" for="userEmail">邮箱 <span style="color: red;">*</span></label>
+                        <input type="email" class="form-control" id="userEmail" placeholder="请输入邮箱地址" required>
+                        <div class="invalid-feedback">请输入有效的邮箱地址</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userName">姓名 <span style="color: red;">*</span></label>
+                        <input type="text" class="form-control" id="userName" placeholder="请输入姓名" required>
+                        <div class="invalid-feedback">姓名不能为空</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userPhone">电话</label>
+                        <input type="tel" class="form-control" id="userPhone" placeholder="请输入电话号码">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">确认删除</h2>
+                <button class="close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除用户 <strong id="deleteUserName"></strong> 吗？</p>
+                <p style="color: #dc3545; font-size: 14px;">此操作不可撤销！</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE_URL = 'http://localhost:8080/api';
+
+        let currentUserId = null;
+        let isEditMode = false;
+        let deleteUserId = null;
+
+        // 页面加载时获取用户列表
+        document.addEventListener('DOMContentLoaded', function () {
+            loadUsers();
+        });
+
+        // 加载用户列表
+        async function loadUsers() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/users`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    displayUsers(result.data);
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('加载用户失败:', error);
+                showAlert('加载用户列表失败，请检查后端服务是否正常运行', 'danger');
+                showEmptyState();
+            }
+        }
+
+        // 显示用户列表
+        function displayUsers(users) {
+            const tbody = document.getElementById('userTableBody');
+
+            if (!users || users.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td><span class="badge badge-primary">${user.id}</span></td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${escapeHtml(user.name)}</td>
+                    <td>${user.phone ? escapeHtml(user.phone) : '-'}</td>
+                    <td>${formatDate(user.created_at)}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="openEditModal(${user.id})">✏️ 编辑</button>
+                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${user.id}, '${escapeHtml(user.name)}')">🗑️ 删除</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            hideLoading();
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        // 打开创建模态框
+        function openCreateModal() {
+            isEditMode = false;
+            currentUserId = null;
+            document.getElementById('modalTitle').textContent = '添加用户';
+            document.getElementById('userForm').reset();
+            clearValidation();
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        // 打开编辑模态框
+        async function openEditModal(userId) {
+            isEditMode = true;
+            currentUserId = userId;
+            document.getElementById('modalTitle').textContent = '编辑用户';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const user = result.data;
+                    document.getElementById('userId').value = user.id;
+                    document.getElementById('userEmail').value = user.email;
+                    document.getElementById('userName').value = user.name;
+                    document.getElementById('userPhone').value = user.phone || '';
+                    clearValidation();
+                    document.getElementById('userModal').classList.add('show');
+                }
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+                showAlert('获取用户信息失败', 'danger');
+            }
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('show');
+            document.getElementById('userForm').reset();
+            clearValidation();
+        }
+
+        // 保存用户
+        async function saveUser() {
+            const email = document.getElementById('userEmail').value.trim();
+            const name = document.getElementById('userName').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+
+            // 验证
+            if (!validateForm()) {
+                return;
+            }
+
+            const userData = { email, name, phone };
+            const saveBtn = document.getElementById('saveUserBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            try {
+                let response;
+                if (isEditMode) {
+                    response = await fetch(`${API_BASE_URL}/users/${currentUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                } else {
+                    response = await fetch(`${API_BASE_URL}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(isEditMode ? '用户更新成功' : '用户创建成功', 'success');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    showAlert(result.error || '操作失败', 'danger');
+                }
+            } catch (error) {
+                console.error('保存用户失败:', error);
+                showAlert('保存用户失败，请检查网络连接', 'danger');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存';
+            }
+        }
+
+        // 打开删除确认模态框
+        function openDeleteModal(userId, userName) {
+            deleteUserId = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        // 关闭删除模态框
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            deleteUserId = null;
+        }
+
+        // 确认删除
+        async function confirmDelete() {
+            if (!deleteUserId) return;
+
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = '删除中...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${deleteUserId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('用户删除成功', 'success');
+                    closeDeleteModal();
+                    loadUsers();
+                } else {
+                    showAlert(result.error || '删除失败', 'danger');
+                }
+            } catch (error) {
+                console.error('删除用户失败:', error);
+                showAlert('删除用户失败，请检查网络连接', 'danger');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '确认删除';
+            }
+        }
+
+        // 表单验证
+        function validateForm() {
+            let isValid = true;
+
+            const email = document.getElementById('userEmail');
+            const name = document.getElementById('userName');
+
+            clearValidation();
+
+            // 验证邮箱
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email.value.trim() || !emailRegex.test(email.value.trim())) {
+                email.classList.add('is-invalid');
+                isValid = false;
+            }
+
+            // 验证姓名
+            if (!name.value.trim()) {
+                name.classList.add('is-invalid');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // 清除验证状态
+        function clearValidation() {
+            document.querySelectorAll('.form-control').forEach(input => {
+                input.classList.remove('is-invalid');
+            });
+        }
+
+        // 显示提示消息
+        function showAlert(message, type = 'info') {
+            const alertEl = document.getElementById('alertMessage');
+            alertEl.className = `alert alert-${type} show`;
+            alertEl.textContent = message;
+
+            setTimeout(() => {
+                alertEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('tableContainer').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        // 显示空状态
+        function showEmptyState() {
+            hideLoading();
+            document.getElementById('tableContainer').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+
+</html>
