@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>库存/仓储管理面板</title>
+    <style>
+        :root {
+            --primary: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --success: #198754;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --gray: #6c757d;
+            --light: #f8f9fa;
+            --border: #dee2e6;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            background: #f6f7fb;
+            color: #222;
+            margin: 0
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0 0 16px
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap
+        }
+
+        .tab {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            user-select: none
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary)
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .04)
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .col {
+            flex: 1 1 240px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px
+        }
+
+        input[type=text],
+        input[type=number],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid transparent;
+            background: var(--primary);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer
+        }
+
+        .btn:hover {
+            background: var(--primary-hover)
+        }
+
+        .btn.secondary {
+            background: #fff;
+            color: #222;
+            border-color: var(--border)
+        }
+
+        .btn.success {
+            background: var(--success)
+        }
+
+        .btn.danger {
+            background: var(--danger)
+        }
+
+        .btn.gray {
+            background: var(--gray)
+        }
+
+        .btn.sm {
+            padding: 6px 10px;
+            font-size: 12px
+        }
+
+        .btn:disabled {
+            opacity: .6;
+            cursor: not-allowed
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            text-align: left;
+            vertical-align: top
+        }
+
+        th {
+            background: var(--light);
+            font-weight: 600
+        }
+
+        .muted {
+            color: #666;
+            font-size: 12px
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3d56d6;
+            font-size: 12px
+        }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .alert {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff3cd;
+            color: #664d03;
+            font-size: 14px
+        }
+
+        .toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            background: #222;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all .25s;
+            z-index: 9999
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            background: rgba(0, 0, 0, .35);
+            align-items: center;
+            justify-content: center;
+            z-index: 99
+        }
+
+        .modal.show {
+            display: flex
+        }
+
+        .modal .panel {
+            width: min(560px, 90vw);
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .15)
+        }
+
+        .hr {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0
+        }
+
+        code {
+            background: #f0f4ff;
+            padding: 2px 6px;
+            border-radius: 6px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>库存/仓储管理面板 <span class="badge" id="serverBadge">服务器：未连接</span></h1>
+
+        <div class="tabs" id="tabs">
+            <div class="tab active" data-tab="warehouses">仓库</div>
+            <div class="tab" data-tab="products">产品</div>
+            <div class="tab" data-tab="inventory">库存</div>
+            <div class="tab" data-tab="movements">出入库/调拨</div>
+            <div class="tab" data-tab="help">使用说明</div>
+        </div>
+
+        <!-- 仓库 -->
+        <section class="card" data-view="warehouses">
+            <div class="toolbar">
+                <input id="whSearch" type="text" placeholder="搜索 名称/编码..." />
+                <select id="whLimit">
+                    <option value="10">每页 10</option>
+                    <option value="20" selected>每页 20</option>
+                    <option value="50">每页 50</option>
+                </select>
+                <button class="btn secondary" id="whRefresh">刷新</button>
+                <div class="pagination" id="whPager"></div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div><strong>新增/编辑 仓库</strong></div>
+                    <div class="hr"></div>
+                    <div class="row">
+                        <div class="col"><label>名称</label><input id="whName" /></div>
+                        <div class="col"><label>编码（唯一）</label><input id="whCode" /></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>地址</label><input id="whAddr" /></div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn success" id="whSave">保存</button>
+                        <button class="btn gray" id="whReset">重置</button>
+                        <span class="muted" id="whFormHint">创建模式</span>
+                    </div>
+                </div>
+                <div class="col" style="flex:2 1 480px">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名称</th>
+                                <th>编码</th>
+                                <th>地址</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="whTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 产品 -->
+        <section class="card" data-view="products" style="display:none">
+            <div class="toolbar">
+                <input id="prodSearch" type="text" placeholder="搜索 名称/SKU..." />
+                <select id="prodLimit">
+                    <option value="10">每页 10</option>
+                    <option value="20" selected>每页 20</option>
+                    <option value="50">每页 50</option>
+                </select>
+                <button class="btn secondary" id="prodRefresh">刷新</button>
+                <div class="pagination" id="prodPager"></div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div><strong>新增/编辑 产品</strong></div>
+                    <div class="hr"></div>
+                    <div class="row">
+                        <div class="col"><label>SKU（唯一）</label><input id="pSku" /></div>
+                        <div class="col"><label>名称</label><input id="pName" /></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>单位</label><input id="pUnit" value="pcs" /></div>
+                        <div class="col"><label>单价</label><input id="pPrice" type="number" min="0" step="0.01" /></div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn success" id="pSave">保存</button>
+                        <button class="btn gray" id="pReset">重置</button>
+                        <span class="muted" id="pFormHint">创建模式</span>
+                    </div>
+                </div>
+                <div class="col" style="flex:2 1 480px">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>SKU</th>
+                                <th>名称</th>
+                                <th>单位</th>
+                                <th>价格</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prodTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 库存 -->
+        <section class="card" data-view="inventory" style="display:none">
+            <div class="toolbar">
+                <select id="invWh"></select>
+                <select id="invProd"></select>
+                <input id="invQ" type="text" placeholder="按 产品名/SKU 模糊..." />
+                <select id="invLimit">
+                    <option value="10">每页 10</option>
+                    <option value="20" selected>每页 20</option>
+                    <option value="50">每页 50</option>
+                </select>
+                <button class="btn secondary" id="invRefresh">查询</button>
+                <div class="pagination" id="invPager"></div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>仓库</th>
+                        <th>产品</th>
+                        <th>SKU</th>
+                        <th>单位</th>
+                        <th>数量</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody id="invTable"></tbody>
+            </table>
+        </section>
+
+        <!-- 出入库/调拨 -->
+        <section class="card" data-view="movements" style="display:none">
+            <div class="row">
+                <div class="col">
+                    <div><strong>创建库存变动</strong></div>
+                    <div class="hr"></div>
+                    <div class="row">
+                        <div class="col">
+                            <label>类型</label>
+                            <select id="mType">
+                                <option value="IN">入库（IN）</option>
+                                <option value="OUT">出库（OUT）</option>
+                                <option value="TRANSFER">调拨（TRANSFER）</option>
+                                <option value="ADJUST">调整（ADJUST，示例为增加）</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>产品</label>
+                            <select id="mProduct"></select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>源仓库</label><select id="mWhFrom"></select></div>
+                        <div class="col"><label>目标仓库（仅调拨）</label><select id="mWhTo" disabled></select></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>数量</label><input id="mQty" type="number" min="1" value="1" /></div>
+                        <div class="col"><label>业务单号</label><input id="mRef" /></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>原因备注</label><input id="mReason" /></div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn success" id="mSubmit">提交</button>
+                        <span class="muted">ADJUST 在后端示例里实现为“只增不减”；减少请用 OUT。</span>
+                    </div>
+                </div>
+                <div class="col" style="flex:2 1 520px">
+                    <div class="toolbar">
+                        <select id="mvFilterWh"></select>
+                        <select id="mvFilterProd"></select>
+                        <select id="mvFilterType">
+                            <option value="">所有类型</option>
+                            <option>IN</option>
+                            <option>OUT</option>
+                            <option>TRANSFER</option>
+                            <option>ADJUST</option>
+                        </select>
+                        <input id="mvRef" type="text" placeholder="按单号搜索..." />
+                        <select id="mvLimit">
+                            <option value="10">每页 10</option>
+                            <option value="20" selected>每页 20</option>
+                            <option value="50">每页 50</option>
+                        </select>
+                        <button class="btn secondary" id="mvRefresh">刷新</button>
+                        <div class="pagination" id="mvPager"></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>类型</th>
+                                <th>仓库</th>
+                                <th>目标仓</th>
+                                <th>产品</th>
+                                <th>数量</th>
+                                <th>单号</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mvTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 帮助 -->
+        <section class="card" data-view="help" style="display:none">
+            <div class="alert">
+                如浏览器控制台出现 CORS 报错：请确保本页面与后端同源，或在后端启用 CORS。<br>
+                后端接口默认 <code>http://127.0.0.1:3000</code>。你可在下方脚本的 <code>BASE_URL</code> 修改。
+            </div>
+            <p>接口映射：</p>
+            <ul>
+                <li>仓库：<code>GET/POST /warehouses</code>，<code>GET/PUT/PATCH/DELETE /warehouses/:id</code></li>
+                <li>产品：<code>GET/POST /products</code>，<code>GET/PUT/PATCH/DELETE /products/:id</code></li>
+                <li>库存：<code>GET /inventory</code>，<code>GET /inventory/:warehouseId/:productId</code></li>
+                <li>出入库：<code>POST /stock-movements</code>；列表：<code>GET /stock-movements</code></li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- 轻量弹窗 -->
+    <div class="modal" id="confirmModal">
+        <div class="panel">
+            <div style="font-weight:600; margin-bottom:8px">确认删除</div>
+            <div id="confirmText" class="muted" style="margin-bottom:12px"></div>
+            <div class="actions" style="justify-content:flex-end">
+                <button class="btn secondary sm" id="confirmCancel">取消</button>
+                <button class="btn danger sm" id="confirmOk">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ====== 配置 ====== */
+        const BASE_URL = 'http://127.0.0.1:3000'; // 如需跨域，请保证服务端允许 CORS
+        const state = {
+            wh: { editingId: null, limit: 20, offset: 0, q: '' },
+            prod: { editingId: null, limit: 20, offset: 0, q: '' },
+            inv: { limit: 20, offset: 0, q: '', warehouseId: '', productId: '' },
+            mv: { limit: 20, offset: 0, warehouseId: '', productId: '', type: '', ref: '' }
+        };
+
+        /* ====== 工具 ====== */
+        function qs(sel) { return document.querySelector(sel) }
+        function qsa(sel) { return Array.from(document.querySelectorAll(sel)) }
+        function toast(msg, ok = true) {
+            const t = qs('#toast'); t.textContent = msg;
+            t.style.background = ok ? '#222' : '#c0392b';
+            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800);
+        }
+        async function api(path, opts = {}) {
+            const res = await fetch(BASE_URL + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+            if (!res.ok) {
+                const text = await res.text().catch(() => res.statusText);
+                throw new Error(text || res.statusText || ('HTTP ' + res.status));
+            }
+            if (res.status === 204) return null;
+            return res.json();
+        }
+        // 分页拉全量：每页 100，直到 total 覆盖
+        async function fetchAllPaged(basePath) {
+            const limit = 100;
+            let offset = 0, all = [];
+            while (true) {
+                const url = `${basePath}?limit=${limit}&offset=${offset}`;
+                const page = await api(url);
+                all = all.concat(page.items || []);
+                offset += limit;
+                if (!page.items || page.items.length < limit || all.length >= (page.total || 0)) break;
+            }
+            return all;
+        }
+
+        function pager(containerId, total, limit, offset, onGoto) {
+            const el = qs('#' + containerId);
+            const totalPages = Math.max(1, Math.ceil(total / limit));
+            const page = Math.floor(offset / limit) + 1;
+            el.innerHTML = '';
+            const mk = (label, disabled, fn) => {
+                const b = document.createElement('button');
+                b.className = 'btn secondary sm'; b.textContent = label;
+                b.disabled = !!disabled; b.onclick = fn; return b;
+            }
+            el.append(mk('«', page <= 1, () => onGoto(0)));
+            el.append(mk('‹', page <= 1, () => onGoto(offset - limit)));
+            const info = document.createElement('span'); info.className = 'muted';
+            info.textContent = `第 ${page}/${totalPages} 页 · 共 ${total} 条`;
+            el.append(info);
+            el.append(mk('›', page >= totalPages, () => onGoto(offset + limit)));
+            el.append(mk('»', page >= totalPages, () => onGoto((totalPages - 1) * limit)));
+        }
+        function confirmDialog(text) {
+            return new Promise(resolve => {
+                qs('#confirmText').textContent = text;
+                const modal = qs('#confirmModal');
+                modal.classList.add('show');
+                const onOk = () => { cleanup(); resolve(true) }
+                const onCancel = () => { cleanup(); resolve(false) }
+                function cleanup() {
+                    modal.classList.remove('show');
+                    ok.removeEventListener('click', onOk); cancel.removeEventListener('click', onCancel)
+                }
+                const ok = qs('#confirmOk'), cancel = qs('#confirmCancel');
+                ok.addEventListener('click', onOk); cancel.addEventListener('click', onCancel);
+            })
+        }
+
+        /* ====== 初始化 Tab ====== */
+        qsa('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                qsa('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const key = tab.dataset.tab;
+                qsa('section.card').forEach(s => s.style.display = (s.dataset.view === key) ? 'block' : 'none');
+            })
+        })
+
+        /* ====== 仓库：列表/表单 ====== */
+        async function loadWarehouses() {
+            const { limit, offset, q } = state.wh;
+            const data = await api(`/warehouses?limit=${limit}&offset=${offset}&q=${encodeURIComponent(q || '')}`);
+            const tbody = qs('#whTable'); tbody.innerHTML = '';
+            for (const r of data.items) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+      <td>${r.id}</td>
+      <td>${r.name || ''}</td>
+      <td><code>${r.code || ''}</code></td>
+      <td>${r.address || ''}</td>
+      <td class="actions">
+        <button class="btn sm" data-edit="${r.id}">编辑</button>
+        <button class="btn danger sm" data-del="${r.id}">删除</button>
+      </td>`;
+                tbody.appendChild(tr);
+            }
+            pager('whPager', data.total, limit, offset, (newOffset) => {
+                state.wh.offset = Math.max(0, newOffset); loadWarehouses();
+            });
+            // 下拉列表联动
+            await fillWarehouseOptions();
+        }
+        function resetWhForm() { state.wh.editingId = null; qs('#whName').value = ''; qs('#whCode').value = ''; qs('#whAddr').value = ''; qs('#whFormHint').textContent = '创建模式'; }
+        async function saveWarehouse() {
+            const body = { name: qs('#whName').value.trim(), code: qs('#whCode').value.trim(), address: qs('#whAddr').value.trim() || null };
+            if (!body.name || !body.code) { toast('名称与编码必填', false); return; }
+            try {
+                if (state.wh.editingId) {
+                    await api(`/warehouses/${state.wh.editingId}`, { method: 'PATCH', body: JSON.stringify(body) });
+                    toast('仓库已更新');
+                } else {
+                    await api('/warehouses', { method: 'POST', body: JSON.stringify(body) });
+                    toast('仓库已创建');
+                }
+                resetWhForm(); await loadWarehouses();
+            } catch (e) { toast(e.message, false); }
+        }
+        qs('#whRefresh').onclick = () => { state.wh.q = qs('#whSearch').value.trim(); state.wh.limit = +qs('#whLimit').value; state.wh.offset = 0; loadWarehouses(); }
+        qs('#whSave').onclick = saveWarehouse;
+        qs('#whReset').onclick = resetWhForm;
+        qs('#whTable').addEventListener('click', async (e) => {
+            const id = e.target.dataset.edit || e.target.dataset.del;
+            if (!id) return;
+            if (e.target.dataset.edit) {
+                const row = await api(`/warehouses/${id}`);
+                qs('#whName').value = row.name; qs('#whCode').value = row.code; qs('#whAddr').value = row.address || '';
+                state.wh.editingId = id; qs('#whFormHint').textContent = `编辑模式（ID=${id}）`;
+            } else if (e.target.dataset.del) {
+                if (await confirmDialog(`确定删除仓库 ID=${id}？（默认软删，可在后端改硬删）`)) {
+                    try { await api(`/warehouses/${id}`, { method: 'DELETE' }); toast('已删除'); await loadWarehouses(); }
+                    catch (err) { toast(err.message, false); }
+                }
+            }
+        });
+
+        /* ====== 产品：列表/表单 ====== */
+        async function loadProducts() {
+            const { limit, offset, q } = state.prod;
+            const data = await api(`/products?limit=${limit}&offset=${offset}&q=${encodeURIComponent(q || '')}`);
+            const tbody = qs('#prodTable'); tbody.innerHTML = '';
+            for (const r of data.items) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+      <td>${r.id}</td>
+      <td><code>${r.sku}</code></td>
+      <td>${r.name}</td>
+      <td>${r.unit || ''}</td>
+      <td>${r.price ?? ''}</td>
+      <td class="actions">
+        <button class="btn sm" data-edit="${r.id}">编辑</button>
+        <button class="btn danger sm" data-del="${r.id}">删除</button>
+      </td>`;
+                tbody.appendChild(tr);
+            }
+            pager('prodPager', data.total, limit, offset, (newOffset) => {
+                state.prod.offset = Math.max(0, newOffset); loadProducts();
+            });
+            // 联动
+            await fillProductOptions();
+        }
+        function resetProdForm() { state.prod.editingId = null; qs('#pSku').value = ''; qs('#pName').value = ''; qs('#pUnit').value = 'pcs'; qs('#pPrice').value = ''; qs('#pFormHint').textContent = '创建模式'; }
+        async function saveProduct() {
+            const body = { sku: qs('#pSku').value.trim(), name: qs('#pName').value.trim(), unit: qs('#pUnit').value.trim() || 'pcs', price: qs('#pPrice').value ? +qs('#pPrice').value : null };
+            if (!body.sku || !body.name) { toast('SKU 与 名称必填', false); return; }
+            try {
+                if (state.prod.editingId) {
+                    await api(`/products/${state.prod.editingId}`, { method: 'PATCH', body: JSON.stringify(body) });
+                    toast('产品已更新');
+                } else {
+                    await api('/products', { method: 'POST', body: JSON.stringify(body) });
+                    toast('产品已创建');
+                }
+                resetProdForm(); await loadProducts();
+            } catch (e) { toast(e.message, false); }
+        }
+        qs('#prodRefresh').onclick = () => { state.prod.q = qs('#prodSearch').value.trim(); state.prod.limit = +qs('#prodLimit').value; state.prod.offset = 0; loadProducts(); }
+        qs('#pSave').onclick = saveProduct;
+        qs('#pReset').onclick = resetProdForm;
+        qs('#prodTable').addEventListener('click', async (e) => {
+            const id = e.target.dataset.edit || e.target.dataset.del;
+            if (!id) return;
+            if (e.target.dataset.edit) {
+                const row = await api(`/products/${id}`);
+                qs('#pSku').value = row.sku; qs('#pName').value = row.name; qs('#pUnit').value = row.unit || 'pcs'; qs('#pPrice').value = row.price ?? '';
+                state.prod.editingId = id; qs('#pFormHint').textContent = `编辑模式（ID=${id}）`;
+            } else if (e.target.dataset.del) {
+                if (await confirmDialog(`确定删除产品 ID=${id}？（默认软删，可在后端改硬删）`)) {
+                    try { await api(`/products/${id}`, { method: 'DELETE' }); toast('已删除'); await loadProducts(); }
+                    catch (err) { toast(err.message, false); }
+                }
+            }
+        });
+
+        /* ====== 下拉：仓库/产品（供库存和出入库使用） ====== */
+        async function fillWarehouseOptions() {
+            // const data = await api(`/warehouses?limit=1000&offset=0`);
+            const items = await fetchAllPaged('/warehouses');
+            const selects = [qs('#invWh'), qs('#mWhFrom'), qs('#mWhTo'), qs('#mvFilterWh')];
+            selects.forEach(s => { s.innerHTML = '<option value="">所有仓库</option>'; });
+            for (const r of items) {
+                const opt = (text, val) => { const o = document.createElement('option'); o.textContent = text; o.value = val; return o; }
+                qs('#mWhFrom').append(opt(`${r.name}(${r.code})`, r.id));
+                qs('#mWhTo').append(opt(`${r.name}(${r.code})`, r.id));
+                qs('#invWh').append(opt(`${r.name}(${r.code})`, r.id));
+                qs('#mvFilterWh').append(opt(`${r.name}(${r.code})`, r.id));
+            }
+        }
+        async function fillProductOptions() {
+            // const data = await api(`/products?limit=1000&offset=0`);
+            const items = await fetchAllPaged('/products');
+            const selects = [qs('#invProd'), qs('#mProduct'), qs('#mvFilterProd')];
+            selects.forEach(s => { s.innerHTML = '<option value="">所有产品</option>'; });
+            for (const r of items) {
+                const opt = (text, val) => { const o = document.createElement('option'); o.textContent = text; o.value = val; return o; }
+                qs('#mProduct').append(opt(`${r.name}(${r.sku})`, r.id));
+                qs('#invProd').append(opt(`${r.name}(${r.sku})`, r.id));
+                qs('#mvFilterProd').append(opt(`${r.name}(${r.sku})`, r.id));
+            }
+        }
+
+        /* ====== 库存列表 ====== */
+        async function loadInventory() {
+            const { warehouseId, productId, q, limit, offset } = state.inv;
+            const p = new URLSearchParams();
+            if (warehouseId) p.set('warehouseId', warehouseId);
+            if (productId) p.set('productId', productId);
+            if (q) p.set('q', q);
+            p.set('limit', limit); p.set('offset', offset);
+            const data = await api(`/inventory?` + p.toString());
+            const tbody = qs('#invTable'); tbody.innerHTML = '';
+            for (const r of data.items) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+      <td>${r.warehouse_name}</td>
+      <td>${r.product_name}</td>
+      <td><code>${r.sku}</code></td>
+      <td>${r.unit || ''}</td>
+      <td>${r.qty}</td>
+      <td class="muted">${r.updated_at || ''}</td>`;
+                tbody.appendChild(tr);
+            }
+            pager('invPager', data.total, limit, offset, (newOffset) => {
+                state.inv.offset = Math.max(0, newOffset); loadInventory();
+            });
+        }
+        qs('#invRefresh').onclick = () => {
+            state.inv.warehouseId = qs('#invWh').value;
+            state.inv.productId = qs('#invProd').value;
+            state.inv.q = qs('#invQ').value.trim();
+            state.inv.limit = +qs('#invLimit').value;
+            state.inv.offset = 0;
+            loadInventory();
+        };
+
+        /* ====== 出入库/调拨 创建 + 列表 ====== */
+        qs('#mType').addEventListener('change', e => {
+            const isTransfer = e.target.value === 'TRANSFER';
+            qs('#mWhTo').disabled = !isTransfer;
+        });
+        async function submitMovement() {
+            const type = qs('#mType').value;
+            const body = {
+                movement_type: type,
+                warehouse_id: +qs('#mWhFrom').value || null,
+                warehouse_to_id: qs('#mWhTo').disabled ? null : (+qs('#mWhTo').value || null),
+                product_id: +qs('#mProduct').value || null,
+                qty: +qs('#mQty').value || 0,
+                reason: qs('#mReason').value.trim() || null,
+                ref_no: qs('#mRef').value.trim() || null
+            };
+            // 简单校验
+            if (!body.warehouse_id || !body.product_id || !body.qty) { toast('源仓/产品/数量 不能为空', false); return; }
+            if (type === 'TRANSFER' && !body.warehouse_to_id) { toast('调拨必须选择目标仓', false); return; }
+            try {
+                const res = await api('/stock-movements', { method: 'POST', body: JSON.stringify(body) });
+                toast('库存变动成功');
+                // 刷新库存与记录
+                loadInventory(); loadMovements();
+            } catch (e) { toast(e.message, false); }
+        }
+        qs('#mSubmit').onclick = submitMovement;
+
+        async function loadMovements() {
+            const { limit, offset, warehouseId, productId, type, ref } = state.mv;
+            const p = new URLSearchParams();
+            if (warehouseId) p.set('warehouseId', warehouseId);
+            if (productId) p.set('productId', productId);
+            if (type) p.set('type', type);
+            if (ref) p.set('ref', ref.trim());
+            p.set('limit', limit); p.set('offset', offset);
+            const data = await api(`/stock-movements?` + p.toString());
+            const tbody = qs('#mvTable'); tbody.innerHTML = '';
+            for (const r of data.items) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+      <td>${r.id}</td><td>${r.movement_type}</td>
+      <td>${r.warehouse_id}</td><td>${r.warehouse_to_id ?? ''}</td>
+      <td>${r.product_id}</td><td>${r.qty}</td>
+      <td>${r.ref_no ?? ''}</td><td class="muted">${r.created_at}</td>`;
+                tbody.appendChild(tr);
+            }
+            pager('mvPager', data.total, limit, offset, (newOffset) => {
+                state.mv.offset = Math.max(0, newOffset); loadMovements();
+            });
+        }
+        qs('#mvRefresh').onclick = () => {
+            state.mv.warehouseId = qs('#mvFilterWh').value;
+            state.mv.productId = qs('#mvFilterProd').value;
+            state.mv.type = qs('#mvFilterType').value;
+            state.mv.ref = qs('#mvRef').value;
+            state.mv.limit = +qs('#mvLimit').value;
+            state.mv.offset = 0;
+            loadMovements();
+        };
+
+        /* ====== 启动：健康检查 + 初次加载 ====== */
+        (async function boot() {
+            try {
+                const health = await api('/health');
+                qs('#serverBadge').textContent = `服务器：已连接`;
+                qs('#serverBadge').style.background = '#e7f5ff'; qs('#serverBadge').style.color = '#0b7285';
+            } catch (e) {
+                qs('#serverBadge').textContent = `服务器连接失败`;
+                qs('#serverBadge').style.background = '#fdecec'; qs('#serverBadge').style.color = '#c92a2a';
+                toast('无法连接后端：请检查 BASE_URL 或 CORS', false);
+            }
+            // 基础数据
+            await fillWarehouseOptions();
+            await fillProductOptions();
+            // 列表初始化
+            loadWarehouses(); loadProducts(); loadInventory(); loadMovements();
+
+            // 仓库/产品工具条快捷
+            qs('#whLimit').onchange = () => qs('#whRefresh').click();
+            qs('#prodLimit').onchange = () => qs('#prodRefresh').click();
+            qs('#invLimit').onchange = () => qs('#invRefresh').click();
+            qs('#mvLimit').onchange = () => qs('#mvRefresh').click();
+
+            // 输入框回车触发检索
+            ['#whSearch', '#prodSearch', '#invQ', '#mvRef'].forEach(sel => {
+                qs(sel).addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur(); e.target.dispatchEvent(new Event('change')); } });
+            });
+        })();
+    </script>
+</body>
+
+</html>
