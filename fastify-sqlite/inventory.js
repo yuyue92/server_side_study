@@ -3,24 +3,44 @@ import sensible from 'fastify-sensible';
 import sqlite3 from 'sqlite3';
 import { promisify } from 'node:util';
 import fs from 'fs';
+import fastifyStatic from '@fastify/static';
+import path from 'node:path';
+import cors from '@fastify/cors';
+import { fileURLToPath } from 'node:url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = Fastify({ logger: true });
 await app.register(sensible);
+// CORS（如果用）
+await app.register(cors, { origin: true });
+
+// 静态托管（同源，无跨域）
+await app.register(fastifyStatic, {
+  root: path.join(__dirname),
+  prefix: '/',
+  index: ['index.html']
+});
+
 
 // ---------- SQLite 初始化 ----------
 const DB_FILE = 'data.db';
 const exists = fs.existsSync(DB_FILE);
 const db = new sqlite3.Database(DB_FILE);
-const run = promisify(db.run.bind(db));
-const all = promisify(db.all.bind(db));
-const get = promisify(db.get.bind(db));
-
+// const run = promisify(db.run.bind(db));
+// const all = promisify(db.all.bind(db));
+// const get = promisify(db.get.bind(db));
+const run  = promisify(db.run.bind(db));
+const all  = promisify(db.all.bind(db));
+const get  = promisify(db.get.bind(db));
+const exec = promisify(db.exec.bind(db));
 // 开启外键
-await run('PRAGMA foreign_keys = ON');
+// await run('PRAGMA foreign_keys = ON');
+await exec('PRAGMA foreign_keys = ON');
 
 // 首次建表
 if (!exists) app.log.info('Initialize DB schema...');
-await run(`
+/* await run(`
 CREATE TABLE IF NOT EXISTS warehouses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -69,7 +89,58 @@ CREATE INDEX IF NOT EXISTS idx_wh ON warehouses(code);
 CREATE INDEX IF NOT EXISTS idx_prod ON products(sku);
 CREATE INDEX IF NOT EXISTS idx_inv ON inventory(warehouse_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_mov ON stock_movements(product_id, warehouse_id, created_at);
-`);
+`); */
+
+await exec(`
+ CREATE TABLE IF NOT EXISTS warehouses (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   name TEXT NOT NULL,
+   code TEXT NOT NULL UNIQUE,
+   address TEXT,
+   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+   updated_at TEXT,
+   deleted_at TEXT
+ );
+ CREATE TABLE IF NOT EXISTS products (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   sku TEXT NOT NULL UNIQUE,
+   name TEXT NOT NULL,
+   unit TEXT DEFAULT 'pcs',
+   price NUMERIC,
+   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+   updated_at TEXT,
+   deleted_at TEXT
+ );
+ CREATE TABLE IF NOT EXISTS inventory (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   warehouse_id INTEGER NOT NULL,
+   product_id INTEGER NOT NULL,
+   qty INTEGER NOT NULL DEFAULT 0,
+   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+   updated_at TEXT,
+   UNIQUE (warehouse_id, product_id),
+   FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+   FOREIGN KEY (product_id) REFERENCES products(id)
+ );
+ CREATE TABLE IF NOT EXISTS stock_movements (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   movement_type TEXT NOT NULL CHECK (movement_type IN ('IN','OUT','TRANSFER','ADJUST')),
+   warehouse_id INTEGER NOT NULL,
+   warehouse_to_id INTEGER,
+   product_id INTEGER NOT NULL,
+   qty INTEGER NOT NULL CHECK (qty > 0),
+   reason TEXT,
+   ref_no TEXT,
+   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+   FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+   FOREIGN KEY (warehouse_to_id) REFERENCES warehouses(id),
+   FOREIGN KEY (product_id) REFERENCES products(id)
+ );
+ CREATE INDEX IF NOT EXISTS idx_wh  ON warehouses(code);
+ CREATE INDEX IF NOT EXISTS idx_prod ON products(sku);
+ CREATE INDEX IF NOT EXISTS idx_inv ON inventory(warehouse_id, product_id);
+ CREATE INDEX IF NOT EXISTS idx_mov ON stock_movements(product_id, warehouse_id, created_at);
+ `);
 
 // ---------- 小工具 ----------
 async function tx(fn) {
@@ -122,6 +193,11 @@ const pagerQuery = {
 
 // ---------- 基础：健康检查 ----------
 app.get('/health', async () => ({ ok: true }));
+app.get('/__schema', async () => {
+  const rows = await all(`SELECT name,type,sql FROM sqlite_master WHERE type IN ('table','index') ORDER BY type,name`);
+  return rows;
+});
+
 
 // ---------- 仓库 CRUD ----------
 const whBody = {
