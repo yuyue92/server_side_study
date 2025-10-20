@@ -7,6 +7,13 @@ npm install fastify @fastify/sensible fastify-plugin better-sqlite3 @fastify/cor
 npm install -D nodemon
 ```
 
+✅ 完整 CRUD 接口：
+- GET /api/todos - 获取所有
+- POST /api/todos - 创建
+- PUT /api/todos/:id - 更新
+- DELETE /api/todos/:id - 删除
+- PATCH /api/todos/:id/toggle - 切换状态
+
 test:
 ```
 curl http://localhost:3000/api/todos
