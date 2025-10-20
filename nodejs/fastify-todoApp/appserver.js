@@ -52,6 +52,15 @@ class Todo {
         const res = db.prepare(sql).run(id)
         return res.changes > 0
     }
+    // 标记为完成/未完成
+    static toggleComplete(id) {
+        const sql = 'UPDATE todos SET completed = NOT completed WHERE id = ?';
+        const result = db.prepare(sql).run(id);
+        if (result.changes === 0) {
+            return null;
+        }
+        return this.findById(id);
+    }
 }
 
 //注册cors插件
@@ -139,7 +148,7 @@ fastify.put('/api/todos/:id', async (request, reply) => {
 // 删除待办事项
 fastify.delete('/api/todos/:id', async (request, reply) => {
     const { id } = request.params
-    const del=Todo.delete(id)
+    const del = Todo.delete(id)
     if (!del) {
         return reply.status(404).send({
             success: false,
@@ -151,7 +160,23 @@ fastify.delete('/api/todos/:id', async (request, reply) => {
         message: 'delete_success'
     }
 })
-
+// 切换完成状态
+fastify.patch('/api/todos/:id/toggle', async (request, reply) => {
+    const { id } = request.params
+    const toggletodo = Todo.toggleComplete(id)
+    if (!toggletodo) {
+        return reply.status(404).send({
+            success: false,
+            error: 'toggle data NOT exist!!!'
+        })
+    }
+    const status = toggletodo.completed ? '完成' : '未完成';
+    return {
+        success: true,
+        data: toggletodo,
+        message: `待办事项已标记为${status}`
+    };
+})
 //启动服务器
 initDatabase()
 fastify.listen({ port: 3000, host: '0.0.0.0' })
