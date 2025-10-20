@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Todo App</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .todo-form {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+        #todoList {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-add {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-toggle {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: black;
+        }
+
+        .btn-save {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .todo-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+            background: #f8f9fa;
+        }
+
+        .completed .todo-title {
+            text-decoration: line-through;
+        }
+
+        .todo-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .todo-description {
+            margin: 10px 0;
+            color: #555;
+        }
+
+        .todo-meta {
+            font-size: 0.8em;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .edit-form {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .edit-form input,
+        .edit-form textarea {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📝 Todo App</h1>
+
+    <div class="todo-form">
+        <h3>添加新任务</h3>
+        <form id="addTodoForm">
+            <div class="form-group">
+                <input type="text" id="title" placeholder="任务标题" required>
+            </div>
+            <div class="form-group">
+                <textarea id="description" placeholder="任务描述"></textarea>
+            </div>
+            <button type="submit" class="btn-add">添加任务</button>
+        </form>
+    </div>
+
+    <div id="messageArea"></div>
+    <div id="todoList">加载中...</div>
+
+    <script>
+        const API_BASE = '/api';
+        let editingId = null; // 当前正在编辑的todo ID
+
+        function showMessage(text, type = 'success') {
+            const area = document.getElementById('messageArea');
+            area.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => area.innerHTML = '', 3000);
+        }
+
+        async function loadTodos() {
+            try {
+                const res = await fetch(API_BASE + '/todos');
+                const data = await res.json();
+
+                if (data.success) {
+                    displayTodos(data.data);
+                } else {
+                    throw new Error('加载失败');
+                }
+            } catch (error) {
+                document.getElementById('todoList').innerHTML = '加载失败: ' + error.message;
+            }
+        }
+
+        function displayTodos(todos) {
+            const list = document.getElementById('todoList');
+
+            if (todos.length === 0) {
+                list.innerHTML = '<p>暂无任务，添加第一个任务开始吧！</p>';
+                return;
+            }
+
+            list.innerHTML = todos.map(todo => {
+                if (todo.id === editingId) {
+                    // 编辑模式
+                    return `
+                        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                            <div class="edit-form">
+                                <input type="text" id="edit-title-${todo.id}" value="${todo.title}" placeholder="任务标题">
+                                <textarea id="edit-description-${todo.id}" placeholder="任务描述">${todo.description || ''}</textarea>
+                                <div>
+                                    <button class="btn-save" onclick="saveTodo(${todo.id})">保存</button>
+                                    <button class="btn-cancel" onclick="cancelEdit(${todo.id})">取消</button>
+                                </div>
+                            </div>
+                            <div class="todo-meta">
+                                创建: ${new Date(todo.created_at).toLocaleString()} |
+                                状态: ${todo.completed ? '已完成' : '未完成'}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 查看模式
+                    return `
+                        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                            <div class="todo-title">${todo.title}</div>
+                            ${todo.description ? `<div class="todo-description">${todo.description}</div>` : ''}
+                            <div class="todo-meta">
+                                创建: ${new Date(todo.created_at).toLocaleString()} |
+                                更新: ${new Date(todo.updated_at).toLocaleString()} |
+                                状态: ${todo.completed ? '已完成' : '未完成'}
+                            </div>
+                            <div>
+                                <button class="btn-toggle" onclick="toggleTodo(${todo.id})">
+                                    ${todo.completed ? '标记未完成' : '标记完成'}
+                                </button>
+                                <button class="btn-edit" onclick="startEdit(${todo.id})">编辑</button>
+                                <button class="btn-delete" onclick="deleteTodo(${todo.id})">删除</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        async function addTodo(todoData) {
+            try {
+                const res = await fetch(API_BASE + '/todos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(todoData)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showMessage('添加成功');
+                    document.getElementById('addTodoForm').reset();
+                    loadTodos();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showMessage('添加失败: ' + error.message, 'error');
+            }
+        }
+
+        // 开始编辑
+        function startEdit(id) {
+            editingId = id;
+            loadTodos();
+        }
+
+        // 取消编辑
+        function cancelEdit(id) {
+            editingId = null;
+            loadTodos();
+        }
+
+        // 保存编辑
+        async function saveTodo(id) {
+            const title = document.getElementById(`edit-title-${id}`).value.trim();
+            const description = document.getElementById(`edit-description-${id}`).value.trim();
+
+            if (!title) {
+                showMessage('标题不能为空', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(API_BASE + '/todos/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showMessage('更新成功');
+                    editingId = null;
+                    loadTodos();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showMessage('更新失败: ' + error.message, 'error');
+            }
+        }
+
+        async function toggleTodo(id) {
+            try {
+                const res = await fetch(API_BASE + '/todos/' + id + '/toggle', {
+                    method: 'PATCH'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showMessage(data.message);
+                    loadTodos();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showMessage('操作失败: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteTodo(id) {
+            if (!confirm('确定删除这个任务吗？')) return;
+
+            try {
+                const res = await fetch(API_BASE + '/todos/' + id, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showMessage('删除成功');
+                    loadTodos();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showMessage('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 事件监听
+        document.getElementById('addTodoForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+
+            if (!title) {
+                showMessage('请输入标题', 'error');
+                return;
+            }
+
+            addTodo({ title, description, completed: false });
+        });
+
+        // 初始化
+        loadTodos();
+    </script>
+</body>
+
+</html>
