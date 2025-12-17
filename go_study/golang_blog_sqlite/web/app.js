@@ -1,353 +1,488 @@
-(function () {
-  const LS_API_BASE = "gb_api_base";
-  const LS_TOKEN = "gb_token";
-  const LS_LOGS = "gb_logs_v1";
+/* Vanilla JS API Tester for Golang Blog */
+(() => {
+  const $ = (sel) => document.querySelector(sel);
 
-  const $ = (id) => document.getElementById(id);
+  const storage = {
+    get(key, fallback=null){
+      try { const v = localStorage.getItem(key); return v ?? fallback; } catch { return fallback; }
+    },
+    set(key, value){
+      try { localStorage.setItem(key, value); } catch {}
+    },
+    del(key){
+      try { localStorage.removeItem(key); } catch {}
+    }
+  };
 
-  const apiBaseInput = $("apiBaseInput");
-  const saveApiBaseBtn = $("saveApiBaseBtn");
-  const tokenStatus = $("tokenStatus");
-  const logoutBtn = $("logoutBtn");
-  const logsEl = $("logs");
-  const clearLogsBtn = $("clearLogsBtn");
+  const state = {
+    apiBase: storage.get("apiBase", "http://localhost:8080"),
+    token: storage.get("token", ""),
+    requestLog: []
+  };
 
-  function nowTime() {
+  function setText(el, text){ el.textContent = text ?? ""; }
+
+  function pretty(obj){
+    if (obj === undefined) return "";
+    if (typeof obj === "string") return obj;
+    try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+  }
+
+  function normalizeBase(url){
+    if (!url) return "http://localhost:8080";
+    url = url.trim();
+    // remove trailing slash
+    return url.replace(/\/+$/,"");
+  }
+
+  function nowTime(){
     const d = new Date();
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mm = String(d.getMinutes()).padStart(2,"0");
+    const ss = String(d.getSeconds()).padStart(2,"0");
+    return `${hh}:${mm}:${ss}`;
   }
 
-  function safeJsonParse(s) {
-    try { return JSON.parse(s); } catch { return null; }
-  }
-  function pretty(v) {
-    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
-  }
-
-  function getApiBase() {
-    const saved = localStorage.getItem(LS_API_BASE);
-    return saved || (location.origin || "http://localhost:8080");
-  }
-  function setApiBase(v) { localStorage.setItem(LS_API_BASE, v); }
-
-  function getToken() { return localStorage.getItem(LS_TOKEN) || ""; }
-  function setToken(t) {
-    if (t) localStorage.setItem(LS_TOKEN, t);
-    else localStorage.removeItem(LS_TOKEN);
-    updateTokenStatus();
-  }
-  function updateTokenStatus() {
-    const t = getToken();
-    tokenStatus.textContent = t ? `已登录 · ${t.slice(0, 18)}...` : "未登录";
+  function pushLog(entry){
+    state.requestLog.unshift(entry);
+    state.requestLog = state.requestLog.slice(0, 20);
+    renderLog();
   }
 
-  function loadLogs() {
-    const raw = localStorage.getItem(LS_LOGS);
-    const arr = raw ? safeJsonParse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  }
-  function saveLogs(arr) { localStorage.setItem(LS_LOGS, JSON.stringify(arr.slice(0, 20))); }
-  function pushLog(item) {
-    const logs = loadLogs();
-    logs.unshift(item);
-    saveLogs(logs);
-    renderLogs();
-  }
-  function renderLogs() {
-    const logs = loadLogs();
-    logsEl.innerHTML = "";
-    if (!logs.length) {
-      logsEl.innerHTML = `<div class="muted" style="font-size:13px">暂无日志</div>`;
-      return;
-    }
-    for (const l of logs) {
+  function renderLog(){
+    const box = $("#reqLog");
+    box.innerHTML = "";
+    for (const it of state.requestLog){
       const div = document.createElement("div");
-      div.className = "log";
-      div.innerHTML = `
-        <div class="log-top">
-          <div class="log-time">${l.time}</div>
-          <div class="log-badge">${l.status}</div>
-        </div>
-        <div class="log-line">${l.method} ${l.path}</div>
-      `;
-      div.title = l.details || "";
-      logsEl.appendChild(div);
+      div.className = "log-item";
+      const t = document.createElement("div");
+      t.className = "t";
+      t.textContent = `${it.time} · ${it.status} · ${it.method} ${it.path}`;
+      const b = document.createElement("div");
+      b.className = "b";
+      b.textContent = it.note || "";
+      div.appendChild(t);
+      div.appendChild(b);
+      box.appendChild(div);
     }
   }
 
-  async function apiFetch(path, options = {}) {
-    const base = getApiBase().replace(/\/$/, "");
-    const url = base + path;
-    const method = (options.method || "GET").toUpperCase();
-    const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
-    const token = getToken();
-    if (token) headers["Authorization"] = "Bearer " + token;
-
-    const start = performance.now();
-    try {
-      const resp = await fetch(url, { method, headers, body: options.body });
-      const status = resp.status;
-      const text = await resp.text();
-      const data = safeJsonParse(text);
-      const ms = Math.round(performance.now() - start);
-
-      pushLog({
-        time: `${nowTime()} · ${ms}ms`,
-        method,
-        path,
-        status,
-        details: text ? text.slice(0, 500) : ""
-      });
-
-      return { status, text, data };
-    } catch (e) {
-      pushLog({ time: `${nowTime()}`, method, path, status: "ERR", details: String(e) });
-      return { status: 0, text: String(e), data: null };
-    }
+  function tokenShort(){
+    if (!state.token) return "未登录";
+    return state.token.length > 24 ? `${state.token.slice(0, 10)}...${state.token.slice(-10)}` : state.token;
   }
 
-  // Nav
-  function setActiveView(view) {
+  function updateTokenUI(){
+    setText($("#tokenState"), tokenShort());
+    $("#btnLogout").disabled = !state.token;
+  }
+
+  function setToken(token){
+    state.token = token || "";
+    if (state.token) storage.set("token", state.token);
+    else storage.del("token");
+    updateTokenUI();
+  }
+
+  function parseJsonSafe(txt){
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch { return null; }
+  }
+
+  function extractToken(respJson){
+    // tolerant extraction for different backend response shapes
+    if (!respJson) return "";
+    if (typeof respJson === "string") return "";
+    if (respJson.token && typeof respJson.token === "string") return respJson.token;
+    const d = respJson.data;
+    if (d && typeof d === "object" && d.token && typeof d.token === "string") return d.token;
+    if (respJson.data && respJson.data.data && respJson.data.data.token) return respJson.data.data.token;
+    return "";
+  }
+
+  async function apiFetch(method, path, body, authMode="auto"){
+    const base = normalizeBase(state.apiBase);
+    const url = `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+
+    const headers = { "Accept": "application/json" };
+    const hasBody = body !== undefined && body !== null && method !== "GET" && method !== "DELETE";
+    if (hasBody) headers["Content-Type"] = "application/json";
+
+    const token = state.token;
+    const shouldAuth =
+      authMode === "force" ? true :
+      authMode === "none" ? false :
+      !!token;
+
+    if (shouldAuth){
+      if (!token && authMode === "force"){
+        throw new Error("强制认证模式但当前没有 token，请先登录。");
+      }
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const options = { method, headers };
+    if (hasBody) options.body = JSON.stringify(body);
+
+    let res, text, json;
+    let status = 0;
+    try{
+      res = await fetch(url, options);
+      status = res.status;
+      text = await res.text();
+      json = parseJsonSafe(text);
+    }catch(err){
+      pushLog({ time: nowTime(), method, path, status: "ERR", note: String(err?.message || err) });
+      throw err;
+    }
+
+    const note = json ? (json.message || json.error || "") : (text?.slice(0, 120) || "");
+    pushLog({ time: nowTime(), method, path, status, note });
+
+    return { status, ok: res.ok, text, json };
+  }
+
+  function bindTabs(){
     document.querySelectorAll(".nav-item").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.view === view);
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        btn.classList.add("active");
+        const tabId = btn.getAttribute("data-tab");
+        document.getElementById(tabId).classList.add("active");
+      });
     });
-    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-    const el = document.getElementById("view-" + view);
-    if (el) el.classList.add("active");
   }
-  document.querySelectorAll(".nav-item").forEach(btn => {
-    btn.addEventListener("click", () => setActiveView(btn.dataset.view));
-  });
 
-  // API Base & Token
-  apiBaseInput.value = getApiBase();
-  saveApiBaseBtn.addEventListener("click", () => {
-    const v = apiBaseInput.value.trim();
-    if (!v) return alert("API Base 不能为空");
-    setApiBase(v);
-    pushLog({ time: nowTime(), method: "INFO", path: "API Base set", status: "OK", details: v });
-    alert("已保存 API Base: " + v);
-  });
-  logoutBtn.addEventListener("click", () => {
-    setToken("");
-    pushLog({ time: nowTime(), method: "AUTH", path: "logout", status: "OK", details: "" });
-  });
-  clearLogsBtn.addEventListener("click", () => {
-    localStorage.removeItem(LS_LOGS);
-    renderLogs();
-  });
-
-  // Health
-  $("healthBtn").addEventListener("click", async () => {
-    const r = await apiFetch("/health");
-    $("healthResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
-
-  // Auth
-  $("registerBtn").addEventListener("click", async () => {
-    const username = $("regUsername").value.trim();
-    const email = $("regEmail").value.trim();
-    const password = $("regPassword").value;
-    if (!username || !email || !password) return alert("请填写完整注册信息");
-    const r = await apiFetch("/api/v1/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ username, email, password })
-    });
-    $("registerResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
-
-  $("loginBtn").addEventListener("click", async () => {
-    const identifier = $("loginIdentifier").value.trim();
-    const password = $("loginPassword").value;
-    if (!identifier || !password) return alert("请填写登录信息");
-
-    const r = await apiFetch("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ identifier, password })
-    });
-    $("loginResp").textContent = r.data ? pretty(r.data) : r.text;
-
-    // 兼容提取 token：{token} / {data:{token}} / {data:"..."}
-    let t = "";
-    const d = r.data;
-    if (d) {
-      if (typeof d.token === "string") t = d.token;
-      else if (d.data && typeof d.data.token === "string") t = d.data.token;
-      else if (typeof d.data === "string") t = d.data;
+  function getFormJSON(form){
+    const data = {};
+    new FormData(form).forEach((v, k) => data[k] = typeof v === "string" ? v : String(v));
+    // trim strings
+    for (const k of Object.keys(data)){
+      if (typeof data[k] === "string") data[k] = data[k].trim();
     }
-    if (t) setToken(t);
-  });
+    return data;
+  }
 
-  $("profileBtn").addEventListener("click", async () => {
-    const r = await apiFetch("/api/v1/profile");
-    $("profileResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
+  function fillPostForms(postId){
+    const idStr = String(postId);
+    // detail
+    const f1 = $("#formGetPost");
+    f1.elements["id"].value = idStr;
+    // update/delete
+    const f2 = $("#formUpdatePost");
+    f2.elements["id"].value = idStr;
+    // comments
+    $("#formListComments").elements["post_id"].value = idStr;
+    $("#formCreateComment").elements["post_id"].value = idStr;
+  }
 
-  // Posts
-  async function refreshPosts() {
-    const r = await apiFetch("/api/v1/posts");
-    $("postsListResp").textContent = r.data ? pretty(r.data) : r.text;
-
-    const arr = Array.isArray(r.data?.data) ? r.data.data : Array.isArray(r.data) ? r.data : [];
-    const list = $("postsList");
-    list.innerHTML = "";
-    if (!arr.length) {
-      list.innerHTML = `<div class="muted" style="font-size:13px">暂无文章</div>`;
+  function renderPostsList(posts){
+    const box = $("#postsList");
+    box.innerHTML = "";
+    if (!Array.isArray(posts) || posts.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "muted small";
+      empty.textContent = "暂无文章。你可以先登录后创建一篇文章。";
+      box.appendChild(empty);
       return;
     }
 
-    for (const p of arr) {
-      const id = p.id ?? p.ID ?? "";
-      const title = p.title ?? "(no title)";
-      const uid = p.user_id ?? p.userID ?? p.UserID ?? "";
-      const created = p.created_at ?? p.CreatedAt ?? "";
-
+    for (const p of posts){
+      const id = p.id ?? p.ID ?? p.Id;
+      const title = p.title ?? p.Title ?? "(无标题)";
+      const userId = p.user_id ?? p.UserID ?? p.userId ?? "";
+      const createdAt = p.created_at ?? p.CreatedAt ?? "";
       const item = document.createElement("div");
-      item.className = "post-item";
-      item.innerHTML = `
-        <div class="post-meta">
-          <div class="post-title"><span class="badge">#${id}</span> ${escapeHtml(title)}</div>
-          <div class="post-sub">user_id: ${escapeHtml(String(uid))} · created: ${escapeHtml(String(created).slice(0, 19))}</div>
-        </div>
-        <div class="post-actions">
-          <button class="btn btn-outline btn-sm" data-act="detail" data-id="${id}">详情</button>
-          <button class="btn btn-outline btn-sm" data-act="fill" data-id="${id}">填充编辑</button>
-          <button class="btn btn-danger btn-sm" data-act="delete" data-id="${id}">删除</button>
-        </div>
-      `;
-      list.appendChild(item);
-    }
+      item.className = "list-item";
 
-    list.querySelectorAll("button[data-act]").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const act = btn.dataset.act;
-        const id = btn.dataset.id;
-        if (!id) return;
+      const left = document.createElement("div");
+      left.className = "li-left";
+      const t = document.createElement("div");
+      t.className = "li-title";
+      t.textContent = `#${id} · ${title}`;
+      const m = document.createElement("div");
+      m.className = "li-meta";
+      m.textContent = `user_id=${userId}  created_at=${createdAt ? String(createdAt) : "-"}`;
+      left.appendChild(t);
+      left.appendChild(m);
 
-        if (act === "detail") {
-          $("postDetailId").value = id;
-          await fetchPostDetail();
-        } else if (act === "fill") {
-          $("editId").value = id;
-          const r2 = await apiFetch(`/api/v1/posts/${id}`);
-          const d = r2.data?.data ?? r2.data;
-          if (d) {
-            $("editTitle").value = d.title ?? "";
-            $("editContent").value = d.content ?? "";
-          }
-          $("postDetailResp").textContent = r2.data ? pretty(r2.data) : r2.text;
-        } else if (act === "delete") {
-          if (!confirm(`确认删除文章 #${id} ?`)) return;
-          const r3 = await apiFetch(`/api/v1/posts/${id}`, { method: "DELETE" });
-          $("editPostResp").textContent = r3.data ? pretty(r3.data) : r3.text;
-          await refreshPosts();
-        }
+      const actions = document.createElement("div");
+      actions.className = "li-actions";
+
+      const btnView = document.createElement("button");
+      btnView.className = "btn";
+      btnView.textContent = "详情";
+      btnView.addEventListener("click", async () => {
+        fillPostForms(id);
+        await doGetPost(id);
+        // switch to posts tab remains
       });
-    });
-  }
 
-  async function fetchPostDetail() {
-    const id = $("postDetailId").value.trim();
-    if (!id) return alert("请填写文章ID");
-    const r = await apiFetch(`/api/v1/posts/${id}`);
-    $("postDetailResp").textContent = r.data ? pretty(r.data) : r.text;
-  }
+      const btnEdit = document.createElement("button");
+      btnEdit.className = "btn";
+      btnEdit.textContent = "填充编辑";
+      btnEdit.addEventListener("click", () => {
+        fillPostForms(id);
+      });
 
-  $("postsRefreshBtn").addEventListener("click", refreshPosts);
-  $("postDetailBtn").addEventListener("click", fetchPostDetail);
+      const btnDelete = document.createElement("button");
+      btnDelete.className = "btn btn-danger";
+      btnDelete.textContent = "删除";
+      btnDelete.addEventListener("click", async () => {
+        fillPostForms(id);
+        await doDeletePost(id);
+      });
 
-  $("createPostBtn").addEventListener("click", async () => {
-    const title = $("createTitle").value.trim();
-    const content = $("createContent").value.trim();
-    if (!title || !content) return alert("标题和内容不能为空");
-    const r = await apiFetch("/api/v1/posts", {
-      method: "POST",
-      body: JSON.stringify({ title, content })
-    });
-    $("createPostResp").textContent = r.data ? pretty(r.data) : r.text;
-    await refreshPosts();
-  });
+      actions.appendChild(btnView);
+      actions.appendChild(btnEdit);
+      actions.appendChild(btnDelete);
 
-  $("updatePostBtn").addEventListener("click", async () => {
-    const id = $("editId").value.trim();
-    if (!id) return alert("请填写文章ID");
-    const title = $("editTitle").value.trim();
-    const content = $("editContent").value.trim();
-    const payload = {};
-    if (title) payload.title = title;
-    if (content) payload.content = content;
-    if (!Object.keys(payload).length) return alert("请至少填写一个字段（标题或内容）");
+      item.appendChild(left);
+      item.appendChild(actions);
+      item.addEventListener("click", (e) => {
+        // avoid double-trigger when clicking buttons
+        if (e.target.tagName === "BUTTON") return;
+        fillPostForms(id);
+      });
 
-    const r = await apiFetch(`/api/v1/posts/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(payload)
-    });
-    $("editPostResp").textContent = r.data ? pretty(r.data) : r.text;
-    await refreshPosts();
-  });
-
-  $("deletePostBtn").addEventListener("click", async () => {
-    const id = $("editId").value.trim();
-    if (!id) return alert("请填写文章ID");
-    if (!confirm(`确认删除文章 #${id} ?`)) return;
-    const r = await apiFetch(`/api/v1/posts/${id}`, { method: "DELETE" });
-    $("editPostResp").textContent = r.data ? pretty(r.data) : r.text;
-    await refreshPosts();
-  });
-
-  // Comments
-  $("commentsFetchBtn").addEventListener("click", async () => {
-    const postId = $("commentsPostId").value.trim();
-    if (!postId) return alert("请填写文章ID");
-    const r = await apiFetch(`/api/v1/comments/post/${postId}`);
-    $("commentsListResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
-
-  $("createCommentBtn").addEventListener("click", async () => {
-    const postId = $("createCommentPostId").value.trim();
-    const content = $("createCommentContent").value.trim();
-    if (!postId || !content) return alert("文章ID与评论内容不能为空");
-    const r = await apiFetch(`/api/v1/posts/${postId}/comments`, {
-      method: "POST",
-      body: JSON.stringify({ content })
-    });
-    $("createCommentResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
-
-  // Console
-  $("consoleSendBtn").addEventListener("click", async () => {
-    const method = $("consoleMethod").value;
-    const path = $("consolePath").value.trim();
-    const body = $("consoleBody").value.trim();
-    if (!path.startsWith("/")) return alert("路径请以 / 开头，如 /api/v1/posts");
-
-    const opt = { method };
-    if (body && method !== "GET") {
-      const parsed = safeJsonParse(body);
-      if (!parsed) return alert("Body 必须是合法 JSON");
-      opt.body = JSON.stringify(parsed);
+      box.appendChild(item);
     }
-    const r = await apiFetch(path, opt);
-    $("consoleResp").textContent = r.data ? pretty(r.data) : r.text;
-  });
-
-  $("consoleClearBtn").addEventListener("click", () => {
-    $("consoleResp").textContent = "";
-    $("consoleBody").value = "";
-  });
-
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
   }
 
-  // init
-  updateTokenStatus();
-  renderLogs();
-  refreshPosts().catch(() => { });
+  // ---- Actions ----
+  async function doHealth(){
+    const hint = $("#healthHint");
+    hint.textContent = "请求中...";
+    try{
+      const r = await apiFetch("GET", "/health");
+      setText($("#healthResp"), r.json ? pretty(r.json) : r.text);
+      hint.textContent = r.ok ? "OK" : `HTTP ${r.status}`;
+    }catch(err){
+      hint.textContent = "失败";
+      setText($("#healthResp"), String(err?.message || err));
+    }
+  }
+
+  async function doRegister(payload){
+    const r = await apiFetch("POST", "/api/v1/auth/register", payload, "none");
+    setText($("#registerResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doLogin(payload){
+    const r = await apiFetch("POST", "/api/v1/auth/login", payload, "none");
+    setText($("#loginResp"), r.json ? pretty(r.json) : r.text);
+    const tok = extractToken(r.json);
+    if (r.ok && tok){
+      setToken(tok);
+    }
+    return r;
+  }
+
+  async function doProfile(){
+    const r = await apiFetch("GET", "/api/v1/profile", null, "force");
+    setText($("#profileResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doListPosts(){
+    const r = await apiFetch("GET", "/api/v1/posts", null, "none");
+    setText($("#postsListResp"), r.json ? pretty(r.json) : r.text);
+    // attempt extract array from response
+    let list = null;
+    if (Array.isArray(r.json)) list = r.json;
+    else if (r.json && Array.isArray(r.json.data)) list = r.json.data;
+    else if (r.json && r.json.data && Array.isArray(r.json.data.items)) list = r.json.data.items;
+    else if (r.json && Array.isArray(r.json.posts)) list = r.json.posts;
+    renderPostsList(list || []);
+    return r;
+  }
+
+  async function doGetPost(id){
+    const r = await apiFetch("GET", `/api/v1/posts/${id}`, null, "none");
+    setText($("#postDetailResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doCreatePost(payload){
+    const r = await apiFetch("POST", "/api/v1/posts", payload, "force");
+    setText($("#createPostResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doUpdatePost(id, payload){
+    const r = await apiFetch("PUT", `/api/v1/posts/${id}`, payload, "force");
+    setText($("#updatePostResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doDeletePost(id){
+    if (!confirm(`确认删除文章 #${id}？（需要作者权限）`)) return;
+    const r = await apiFetch("DELETE", `/api/v1/posts/${id}`, null, "force");
+    setText($("#updatePostResp"), r.json ? pretty(r.json) : r.text);
+    // refresh list after delete
+    await doListPosts();
+    return r;
+  }
+
+  async function doListComments(postId){
+    const r = await apiFetch("GET", `/api/v1/comments/post/${postId}`, null, "none");
+    setText($("#listCommentsResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doCreateComment(postId, payload){
+    const r = await apiFetch("POST", `/api/v1/posts/${postId}/comments`, payload, "force");
+    setText($("#createCommentResp"), r.json ? pretty(r.json) : r.text);
+    return r;
+  }
+
+  async function doCustomSend(){
+    const method = $("#customMethod").value;
+    let path = $("#customPath").value.trim();
+    if (!path) path = "/health";
+    const auth = $("#customAuth").value;
+    const bodyText = $("#customBody").value.trim();
+
+    let body = null;
+    if (method !== "GET" && method !== "DELETE"){
+      if (bodyText){
+        const parsed = parseJsonSafe(bodyText);
+        if (!parsed){
+          setText($("#customResp"), "JSON Body 解析失败，请检查格式。");
+          return;
+        }
+        body = parsed;
+      }else{
+        body = {}; // allow empty body for POST/PUT
+      }
+    }
+
+    try{
+      const r = await apiFetch(method, path, body, auth);
+      setText($("#customResp"), r.json ? pretty(r.json) : r.text);
+    }catch(err){
+      setText($("#customResp"), String(err?.message || err));
+    }
+  }
+
+  async function doSmoke(){
+    const hint = $("#smokeHint");
+    hint.textContent = "冒烟测试中...";
+    try{
+      const r1 = await apiFetch("GET", "/health", null, "none");
+      const r2 = await apiFetch("GET", "/api/v1/posts", null, "none");
+      hint.textContent = `完成：/health=${r1.status}, /posts=${r2.status}`;
+      setText($("#customResp"), pretty({ health: r1.json || r1.text, posts: r2.json || r2.text }));
+    }catch(err){
+      hint.textContent = "失败（检查后端是否启动/是否 CORS）";
+      setText($("#customResp"), String(err?.message || err));
+    }
+  }
+
+  // ---- Bind UI ----
+  function bindUI(){
+    // base url
+    $("#apiBase").value = state.apiBase;
+    $("#btnSaveBase").addEventListener("click", () => {
+      state.apiBase = normalizeBase($("#apiBase").value);
+      storage.set("apiBase", state.apiBase);
+      pushLog({ time: nowTime(), method: "-", path: "-", status: "INFO", note: `API Base set to ${state.apiBase}` });
+    });
+
+    // logout
+    $("#btnLogout").addEventListener("click", () => {
+      setToken("");
+      setText($("#profileResp"), "");
+      pushLog({ time: nowTime(), method:"-", path:"-", status:"INFO", note:"Logged out" });
+    });
+
+    // health
+    $("#btnHealth").addEventListener("click", doHealth);
+
+    // register
+    $("#formRegister").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = getFormJSON(e.target);
+      await doRegister(payload);
+    });
+
+    // login
+    $("#formLogin").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = getFormJSON(e.target);
+      await doLogin(payload);
+    });
+
+    $("#btnProfile").addEventListener("click", doProfile);
+
+    // posts
+    $("#btnListPosts").addEventListener("click", doListPosts);
+
+    $("#formGetPost").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = e.target.elements["id"].value;
+      await doGetPost(id);
+    });
+
+    $("#formCreatePost").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = getFormJSON(e.target);
+      await doCreatePost(payload);
+      await doListPosts();
+    });
+
+    $("#formUpdatePost").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = e.target.elements["id"].value;
+      const title = e.target.elements["title"].value.trim();
+      const content = e.target.elements["content"].value.trim();
+      const payload = {};
+      if (title) payload.title = title;
+      if (content) payload.content = content;
+      if (Object.keys(payload).length === 0){
+        setText($("#updatePostResp"), "请至少填写 title 或 content 之一用于更新。");
+        return;
+      }
+      await doUpdatePost(id, payload);
+      await doListPosts();
+    });
+
+    $("#btnDeletePost").addEventListener("click", async () => {
+      const id = $("#formUpdatePost").elements["id"].value;
+      if (!id) { alert("请先填写文章 ID"); return; }
+      await doDeletePost(id);
+    });
+
+    // comments
+    $("#formListComments").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const postId = e.target.elements["post_id"].value;
+      await doListComments(postId);
+    });
+
+    $("#formCreateComment").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const postId = e.target.elements["post_id"].value;
+      const payload = getFormJSON(e.target);
+      // backend expects only content in body
+      await doCreateComment(postId, { content: payload.content });
+      await doListComments(postId);
+    });
+
+    // console
+    $("#btnCustomSend").addEventListener("click", doCustomSend);
+    $("#btnRunSmoke").addEventListener("click", doSmoke);
+  }
+
+  function init(){
+    bindTabs();
+    bindUI();
+    updateTokenUI();
+    // initial log
+    pushLog({ time: nowTime(), method:"-", path:"-", status:"INFO", note:`Loaded. API Base=${state.apiBase}` });
+  }
+
+  window.addEventListener("DOMContentLoaded", init);
 })();
