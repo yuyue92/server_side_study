@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golang Blog API Tester</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <header class="navbar">
+    <div class="brand">
+      <div class="logo">GB</div>
+      <div class="brand-text">
+        <div class="brand-title">Golang Blog API Tester</div>
+        <div class="brand-subtitle">Gin + GORM + SQLite · 纯 HTML/CSS/JS</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <label class="field-inline">
+        <span class="label">API Base</span>
+        <input id="apiBaseInput" class="input" type="text" placeholder="http://localhost:8080" />
+      </label>
+      <button id="saveApiBaseBtn" class="btn btn-primary">保存</button>
+
+      <div class="token-box">
+        <div class="token-label">Token</div>
+        <div id="tokenStatus" class="token-status">未登录</div>
+      </div>
+      <button id="logoutBtn" class="btn btn-outline">退出登录</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">导航</div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="health">健康检查</button>
+        <button class="nav-item" data-view="auth">认证与用户</button>
+        <button class="nav-item" data-view="posts">文章</button>
+        <button class="nav-item" data-view="comments">评论</button>
+        <button class="nav-item" data-view="console">接口控制台</button>
+      </nav>
+
+      <div class="hint">
+        <div class="hint-title">提示</div>
+        <div class="hint-body">
+          <ol>
+            <li>先【保存 API Base】</li>
+            <li>注册/登录后会自动保存 Token</li>
+            <li>创建/更新/删除/评论需要认证</li>
+          </ol>
+        </div>
+      </div>
+    </aside>
+
+    <section class="content">
+      <!-- HEALTH -->
+      <div id="view-health" class="view active">
+        <h1>健康检查</h1>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">GET /health</div>
+              <div class="card-subtitle">用于快速确认后端是否正常运行</div>
+            </div>
+            <button id="healthBtn" class="btn btn-primary">执行健康检查</button>
+          </div>
+          <div class="card-body">
+            <div class="split">
+              <div>
+                <div class="section-title">响应</div>
+                <pre id="healthResp" class="code"></pre>
+              </div>
+              <div>
+                <div class="section-title">说明</div>
+                <p class="muted">
+                  同源托管（Gin 托管 web/）时通常不需要 CORS；如仍跨域，请确保后端启用 CORS。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUTH -->
+      <div id="view-auth" class="view">
+        <h1>认证与用户</h1>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">注册</div>
+                <div class="card-subtitle">POST /api/v1/auth/register</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form">
+                <label class="field">
+                  <span class="label">用户名</span>
+                  <input id="regUsername" class="input" type="text" placeholder="alice" />
+                </label>
+                <label class="field">
+                  <span class="label">邮箱</span>
+                  <input id="regEmail" class="input" type="email" placeholder="alice@example.com" />
+                </label>
+                <label class="field">
+                  <span class="label">密码</span>
+                  <input id="regPassword" class="input" type="password" placeholder="******" />
+                </label>
+                <button id="registerBtn" class="btn btn-primary">注册</button>
+              </div>
+              <div class="section-title">响应</div>
+              <pre id="registerResp" class="code"></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">登录</div>
+                <div class="card-subtitle">POST /api/v1/auth/login（identifier 支持 username 或 email）</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form">
+                <label class="field">
+                  <span class="label">identifier</span>
+                  <input id="loginIdentifier" class="input" type="text" placeholder="alice 或 alice@example.com" />
+                </label>
+                <label class="field">
+                  <span class="label">密码</span>
+                  <input id="loginPassword" class="input" type="password" placeholder="******" />
+                </label>
+                <button id="loginBtn" class="btn btn-primary">登录</button>
+              </div>
+              <div class="section-title">响应</div>
+              <pre id="loginResp" class="code"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Profile</div>
+              <div class="card-subtitle">GET /api/v1/profile（需要认证）</div>
+            </div>
+            <button id="profileBtn" class="btn btn-primary">获取 Profile</button>
+          </div>
+          <div class="card-body">
+            <pre id="profileResp" class="code"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POSTS -->
+      <div id="view-posts" class="view">
+        <h1>文章</h1>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">文章列表</div>
+                <div class="card-subtitle">GET /api/v1/posts（公开）</div>
+              </div>
+              <button id="postsRefreshBtn" class="btn btn-primary">刷新列表</button>
+            </div>
+            <div class="card-body">
+              <div id="postsList" class="list"></div>
+              <div class="section-title">列表响应</div>
+              <pre id="postsListResp" class="code"></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">文章详情</div>
+                <div class="card-subtitle">GET /api/v1/posts/:id（公开）</div>
+              </div>
+              <div class="row">
+                <input id="postDetailId" class="input input-sm" type="number" placeholder="文章ID" />
+                <button id="postDetailBtn" class="btn btn-primary">获取详情</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <pre id="postDetailResp" class="code"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">创建文章</div>
+                <div class="card-subtitle">POST /api/v1/posts（需要认证）</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form">
+                <label class="field">
+                  <span class="label">标题</span>
+                  <input id="createTitle" class="input" type="text" placeholder="Hello" />
+                </label>
+                <label class="field">
+                  <span class="label">内容</span>
+                  <textarea id="createContent" class="textarea" rows="6" placeholder="写点什么..."></textarea>
+                </label>
+                <button id="createPostBtn" class="btn btn-primary">创建</button>
+              </div>
+              <div class="section-title">响应</div>
+              <pre id="createPostResp" class="code"></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">更新 / 删除文章</div>
+                <div class="card-subtitle">PUT /api/v1/posts/:id（需要认证，仅作者） · DELETE /api/v1/posts/:id</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form">
+                <label class="field">
+                  <span class="label">文章ID</span>
+                  <input id="editId" class="input" type="number" placeholder="例如 1" />
+                </label>
+                <label class="field">
+                  <span class="label">标题（可选）</span>
+                  <input id="editTitle" class="input" type="text" placeholder="新标题" />
+                </label>
+                <label class="field">
+                  <span class="label">内容（可选）</span>
+                  <textarea id="editContent" class="textarea" rows="6" placeholder="新内容"></textarea>
+                </label>
+                <div class="row">
+                  <button id="updatePostBtn" class="btn btn-primary">更新</button>
+                  <button id="deletePostBtn" class="btn btn-danger">删除</button>
+                </div>
+              </div>
+              <div class="section-title">响应</div>
+              <pre id="editPostResp" class="code"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMENTS -->
+      <div id="view-comments" class="view">
+        <h1>评论</h1>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">获取文章评论</div>
+                <div class="card-subtitle">GET /api/v1/comments/post/:post_id（公开）</div>
+              </div>
+              <div class="row">
+                <input id="commentsPostId" class="input input-sm" type="number" placeholder="文章ID" />
+                <button id="commentsFetchBtn" class="btn btn-primary">获取评论</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <pre id="commentsListResp" class="code"></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">创建评论</div>
+                <div class="card-subtitle">POST /api/v1/posts/:post_id/comments（需要认证）</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form">
+                <label class="field">
+                  <span class="label">文章ID</span>
+                  <input id="createCommentPostId" class="input" type="number" placeholder="文章ID" />
+                </label>
+                <label class="field">
+                  <span class="label">评论内容</span>
+                  <textarea id="createCommentContent" class="textarea" rows="5" placeholder="Nice post!"></textarea>
+                </label>
+                <button id="createCommentBtn" class="btn btn-primary">创建评论</button>
+              </div>
+              <div class="section-title">响应</div>
+              <pre id="createCommentResp" class="code"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSOLE -->
+      <div id="view-console" class="view">
+        <h1>接口控制台</h1>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">自定义请求</div>
+              <div class="card-subtitle">用于手工验证任意接口（会自动带上 Token）</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="grid-3">
+              <label class="field">
+                <span class="label">方法</span>
+                <select id="consoleMethod" class="input">
+                  <option>GET</option>
+                  <option>POST</option>
+                  <option>PUT</option>
+                  <option>DELETE</option>
+                </select>
+              </label>
+              <label class="field col-2">
+                <span class="label">路径（相对 API Base）</span>
+                <input id="consolePath" class="input" type="text" placeholder="/api/v1/posts" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="label">Body（JSON，可选）</span>
+              <textarea id="consoleBody" class="textarea" rows="8"
+                placeholder='{"title":"Hello","content":"..."}'></textarea>
+            </label>
+
+            <div class="row">
+              <button id="consoleSendBtn" class="btn btn-primary">发送请求</button>
+              <button id="consoleClearBtn" class="btn btn-outline">清空</button>
+            </div>
+
+            <div class="section-title">响应</div>
+            <pre id="consoleResp" class="code"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="rightbar">
+      <div class="rightbar-head">
+        <div>
+          <div class="rightbar-title">请求日志</div>
+          <div class="rightbar-subtitle">最近 20 次请求（用于自检）</div>
+        </div>
+        <button id="clearLogsBtn" class="btn btn-outline btn-sm">清空</button>
+      </div>
+      <div id="logs" class="logs"></div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">建议：由 Gin 同域托管 web/ 静态文件后直接访问 /</span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+
+</html>
