@@ -1,0 +1,91 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background-color: #f4f4f9; color: #333; }
+
+/* 导航栏 */
+nav { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+nav a { color: #ecf0f1; text-decoration: none; margin-left: 15px; cursor: pointer; }
+nav a:hover { color: #3498db; }
+.logo { font-size: 1.5rem; font-weight: bold; }
+
+/* 容器 */
+.container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+.view { animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* 表单 */
+.form-group { margin-bottom: 1rem; }
+label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+input, textarea { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; }
+button { background: #3498db; color: white; border: none; padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 4px; font-size: 1rem; }
+button:hover { background: #2980b9; }
+button.delete-btn { background: #e74c3c; margin-left: 10px; }
+button.edit-btn { background: #f39c12; }
+
+/* 文章列表 */
+.post-card { background: white; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.post-card h3 { color: #2c3e50; margin-bottom: 0.5rem; cursor: pointer; }
+.post-meta { color: #7f8c8d; font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* 详情页 */
+#post-detail-content { background: white; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; }
+.comment { border-bottom: 1px solid #eee; padding: 1rem 0; }
+.comment-user { font-weight: bold; color: #34495e; }
+.back-btn { background: transparent; color: #3498db; padding: 0; margin-bottom: 1rem; }
+.back-btn:hover { background: transparent; text-decoration: underline; }
+
+/* 消息提示 */
+.message-box { padding: 10px; margin-bottom: 20px; border-radius: 4px; display: none; }
+.error { background: #fdeaea; color: #e74c3c; display: block;}
+.success { background: #eafaf1; color: #2ecc71; display: block;}
+
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.search-bar { display: flex; gap: 10px; }
+.search-bar input { width: 200px; padding: 0.5rem; }
+
+.pagination { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 30px; }
+.pagination button:disabled { background: #ccc; cursor: not-allowed; }
+#page-info { font-weight: bold; }
+
+.post-body { line-height: 1.6; white-space: pre-wrap; } /* 保留换行 */
+
+/* 基础风格调整 */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+}
+
+body { background-color: var(--light-bg); color: #212529; line-height: 1.5; }
+
+/* 导航栏 Bootstrap 化 */
+nav { background: #fff; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.08); border-bottom: 1px solid var(--border-color); }
+nav a { color: #555; font-weight: 500; }
+.logo { color: var(--primary-color); }
+
+/* 表格样式优化 */
+.table-responsive { background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
+.table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+.table th, .table td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); text-align: left; }
+.table th { background: #fcfcfc; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: #666; }
+.table tbody tr:hover { background-color: #f1f7ff; cursor: pointer; }
+
+/* 按钮样式优化 */
+.btn { padding: 6px 16px; border-radius: 4px; font-size: 0.9rem; border: none; cursor: pointer; transition: 0.2s; }
+.btn-primary { background: var(--primary-color); color: #fff; }
+.btn-outline { background: #fff; border: 1px solid var(--border-color); color: #555; }
+.btn-outline:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 分类按钮样式 */
+.cat-btn { background: #fff; border: 1px solid var(--border-color); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
+.cat-btn.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+
+/* 详情页间距 */
+#post-detail-content { border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+
+/* 隐藏不必要的滚动条 */
+body::-webkit-scrollbar { width: 8px; }
+body::-webkit-scrollbar-track { background: #f1f1f1; }
+body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+body::-webkit-scrollbar-thumb:hover { background: #999; }
