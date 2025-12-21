@@ -1,16 +1,17 @@
-/* frontend/styles.css (updated to simulate Bootstrap style) */
+/* frontend/styles.css (updated for compactness) */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #f8f9fa;
     color: #212529;
+    font-size: 0.875rem; /* Smaller base font for compactness */
 }
 
 header {
     background-color: #007bff;
     color: white;
-    padding: 10px;
+    padding: 8px 16px; /* Reduced padding */
 }
 
 nav ul {
@@ -21,7 +22,7 @@ nav ul {
 
 nav ul li {
     display: inline;
-    margin-right: 15px;
+    margin-right: 12px; /* Reduced margin */
 }
 
 nav ul li a {
@@ -31,28 +32,30 @@ nav ul li a {
 }
 
 .container {
-    max-width: 1140px;
+    max-width: 960px; /* Narrower container for compactness */
     margin: 0 auto;
-    padding: 20px;
+    padding: 16px; /* Reduced padding */
 }
 
 h2, h3 {
     color: #343a40;
+    margin-top: 0;
+    margin-bottom: 0.5rem; /* Reduced margins */
 }
 
 form {
-    max-width: 500px;
+    max-width: 400px; /* Smaller form width */
     margin: 0 auto;
 }
 
 input, textarea {
     width: 100%;
-    padding: 0.375rem 0.75rem;
-    margin-bottom: 1rem;
+    padding: 0.25rem 0.5rem; /* Reduced padding */
+    margin-bottom: 0.5rem; /* Reduced margin */
     border: 1px solid #ced4da;
     border-radius: 0.25rem;
     box-sizing: border-box;
-    font-size: 1rem;
+    font-size: 0.875rem;
 }
 
 button {
@@ -69,8 +72,8 @@ button {
     user-select: none;
     background-color: transparent;
     border: 1px solid transparent;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
+    padding: 0.25rem 0.5rem; /* Reduced padding for buttons */
+    font-size: 0.875rem;
     line-height: 1.5;
     border-radius: 0.25rem;
     transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
@@ -108,7 +111,20 @@ button {
     background-color: #c82333;
     border-color: #bd2130;
 }
+.btn-disabled{
+    background-color: #ced4da;cursor:  none;
+}
 
+.btn-sm {
+    padding: 0.125rem 0.25rem; /* Even smaller for action buttons */
+    font-size: 0.75rem;
+}
+
+#header-content >div {
+    display: flex;
+    gap: 20px;
+    float: right;
+}
 /* Card styles */
 .card {
     position: relative;
@@ -120,21 +136,21 @@ button {
     background-clip: border-box;
     border: 1px solid rgba(0, 0, 0, 0.125);
     border-radius: 0.25rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem; /* Reduced margin */
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .card-body {
     flex: 1 1 auto;
-    padding: 1.25rem;
+    padding: 1rem; /* Reduced padding */
 }
 
 .card-title {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem; /* Reduced */
 }
 
 .card-text {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem; /* Reduced */
 }
 
 /* Table styles */
@@ -143,13 +159,17 @@ button {
     margin-bottom: 1rem;
     color: #212529;
     border-collapse: collapse;
+    font-size: 0.875rem;
 }
 
 .table th,
 .table td {
-    padding: 0.75rem;
-    vertical-align: top;
+    padding: 0.5rem; /* Reduced padding for rows */
+    vertical-align: middle; /* Center vertically for better compactness */
     border-top: 1px solid #dee2e6;
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .table thead th {
@@ -166,12 +186,32 @@ button {
     background-color: rgba(0, 0, 0, 0.075);
 }
 
+/* Specific column widths */
+.table th:nth-child(1), .table td:nth-child(1) { /* ID */
+    width: 10%;
+}
+
+.table th:nth-child(2), .table td:nth-child(2) { /* Title */
+    width: 25%;
+    max-width: 25%;
+}
+
+.table th:nth-child(3), .table td:nth-child(3) { /* Content Preview */
+    width: 45%;
+    max-width: 45%;
+}
+
+.table th:nth-child(4), .table td:nth-child(4) { /* Actions */
+    width: 20%;
+}
+
 /* Pagination styles */
 .pagination {
     display: flex;
     padding-left: 0;
     list-style: none;
     border-radius: 0.25rem;
+    margin-top: 0.5rem; /* Reduced margin */
 }
 
 .page-item {
@@ -185,12 +225,13 @@ button {
 .page-link {
     position: relative;
     display: block;
-    padding: 0.5rem 0.75rem;
+    padding: 0.25rem 0.5rem; /* Reduced padding */
     line-height: 1.25;
     color: #007bff;
     background-color: #fff;
     border: 1px solid #dee2e6;
     text-decoration: none;
+    font-size: 0.875rem;
 }
 
 .page-item.active .page-link {
@@ -216,8 +257,16 @@ button {
 /* Comment styles */
 .comment {
     background-color: #f8f9fa;
-    padding: 1rem;
-    margin-top: 1rem;
+    padding: 0.75rem; /* Reduced padding */
+    margin-top: 0.5rem; /* Reduced margin */
     border-left: 3px solid #ced4da;
     border-radius: 0.25rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important; /* Adjusted for compactness */
+}
+
+.mt-3 {
+    margin-top: 1rem !important;
 }

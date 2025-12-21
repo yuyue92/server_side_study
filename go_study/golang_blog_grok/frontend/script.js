@@ -1,7 +1,7 @@
-// frontend/script.js (updated for table and pagination)
+// frontend/script.js (minor update for content preview truncation in JS)
 const API_BASE = 'http://localhost:8080/api/v1';
 const POSTS_PER_PAGE = 10;
-
+let currentUserID = '';
 let currentPage = 1;
 let allPosts = [];
 
@@ -21,12 +21,12 @@ function updateNav() {
     const token = getToken();
     if (token) {
         document.getElementById('auth-link').style.display = 'none';
-        document.getElementById('profile-link').style.display = 'inline';
         document.getElementById('logout-link').style.display = 'inline';
+        document.getElementById('header-content').style.display = 'inline';
     } else {
         document.getElementById('auth-link').style.display = 'inline';
-        document.getElementById('profile-link').style.display = 'none';
         document.getElementById('logout-link').style.display = 'none';
+        document.getElementById('header-content').style.display = 'none';
     }
 }
 
@@ -80,26 +80,26 @@ function showProfile() {
     fetch(`${API_BASE}/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            const content = document.getElementById('content');
-            content.innerHTML = `
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="card-title">Profile</h2>
-                        <p><strong>ID:</strong> ${data.data.id}</p>
-                        <p><strong>Username:</strong> ${data.data.username}</p>
-                        <p><strong>Email:</strong> ${data.data.email}</p>
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const content = document.getElementById('header-content');
+                currentUserID = data.data.id;
+                console.warn('____currentUserID___: ', currentUserID)
+                content.innerHTML = `
+                    <div>
+                        <span class="card-title">Profile</span>
+                        <span><strong>ID:</strong> ${data.data.id}</span>
+                        <span><strong>Username:</strong> ${data.data.username}</span>
+                        <span><strong>Email:</strong> ${data.data.email}</span>
                     </div>
-                </div>
             `;
-        } else {
-            alert(data.error);
-            logout();
-        }
-    })
-    .catch(err => console.error(err));
+            } else {
+                alert(data.error);
+                logout();
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function logout() {
@@ -118,16 +118,16 @@ function register(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('Registered successfully. Please login.');
-            showLogin();
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Registered successfully. Please login.');
+                showLogin();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function login(e) {
@@ -139,31 +139,32 @@ function login(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            setToken(data.data.token);
-            updateNav();
-            showHome();
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                setToken(data.data.token);
+                updateNav();
+                showHome();
+                showProfile();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function fetchPosts() {
     fetch(`${API_BASE}/posts`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            allPosts = data.data;
-            renderPosts();
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                allPosts = data.data;
+                renderPosts();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function renderPosts(page = 1) {
@@ -182,7 +183,7 @@ function renderPosts(page = 1) {
                     <h3 class="card-title">Create New Post</h3>
                     <form id="create-post-form">
                         <input type="text" id="post-title" placeholder="Title" required>
-                        <textarea id="post-content" placeholder="Content" required></textarea>
+                        <textarea id="post-content" placeholder="Content" required rows="3"></textarea> <!-- Reduced rows for textarea -->
                         <button type="submit" class="btn btn-primary">Create Post</button>
                     </form>
                 </div>
@@ -204,17 +205,18 @@ function renderPosts(page = 1) {
     `;
 
     paginatedPosts.forEach(post => {
+        const title = post.Title.length > 50 ? post.Title.substring(0, 50) + '...' : post.Title; // Truncate title in JS too
         const preview = post.Content.length > 100 ? post.Content.substring(0, 100) + '...' : post.Content;
         html += `
             <tr>
                 <td>${post.ID}</td>
-                <td>${post.Title}</td>
-                <td>${preview}</td>
+                <td title="${post.Title}">${title}</td> <!-- Tooltip for full title -->
+                <td title="${post.Content}">${preview}</td> <!-- Tooltip for full content -->
                 <td>
-                    <a href="#" class="btn btn-secondary btn-sm" onclick="showPost(${post.ID})">View</a>
+                    <button class="btn btn-secondary btn-sm" onclick="showPost(${post.ID})">View</button>
                     ${getToken() ? `
-                        <a href="#" class="btn btn-primary btn-sm" onclick="showEditPost(${post.ID})">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm" onclick="deletePost(${post.ID})">Delete</a>
+                        <button  class="btn btn-primary btn-sm" onclick="showEditPost(${post.ID})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deletePost(${post.ID})">Delete</button>
                     ` : ''}
                 </td>
             </tr>
@@ -249,12 +251,12 @@ function renderPosts(page = 1) {
 
 function showPost(id) {
     fetch(`${API_BASE}/posts/${id}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            const post = data.data;
-            const content = document.getElementById('content');
-            let html = `
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const post = data.data;
+                const content = document.getElementById('content');
+                let html = `
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">${post.Title}</h2>
@@ -264,52 +266,52 @@ function showPost(id) {
                 <h3>Comments</h3>
                 <div id="comments"></div>
             `;
-            if (getToken()) {
-                html += `
+                if (getToken()) {
+                    html += `
                     <div class="card mt-3">
                         <div class="card-body">
                             <form id="create-comment-form">
-                                <textarea id="comment-content" placeholder="Add a comment" required></textarea>
+                                <textarea id="comment-content" placeholder="Add a comment" required rows="2"></textarea> <!-- Reduced rows -->
                                 <button type="submit" class="btn btn-primary">Add Comment</button>
                             </form>
                         </div>
                     </div>
                 `;
+                }
+                content.innerHTML = html;
+                fetchComments(id);
+                if (getToken()) {
+                    document.getElementById('create-comment-form').addEventListener('submit', (e) => createComment(e, id));
+                }
+            } else {
+                alert(data.error);
             }
-            content.innerHTML = html;
-            fetchComments(id);
-            if (getToken()) {
-                document.getElementById('create-comment-form').addEventListener('submit', (e) => createComment(e, id));
-            }
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        })
+        .catch(err => console.error(err));
 }
 
 function fetchComments(postId) {
     fetch(`${API_BASE}/comments/post/${postId}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            const commentsDiv = document.getElementById('comments');
-            let html = '';
-            data.data.forEach(comment => {
-                html += `
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const commentsDiv = document.getElementById('comments');
+                let html = '';
+                data.data.forEach(comment => {
+                    html += `
                     <div class="comment card">
                         <div class="card-body">
                             <p class="card-text">${comment.Content}</p>
                         </div>
                     </div>
                 `;
-            });
-            commentsDiv.innerHTML = html;
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+                });
+                commentsDiv.innerHTML = html;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function createPost(e) {
@@ -325,42 +327,42 @@ function createPost(e) {
         },
         body: JSON.stringify({ title, content })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            fetchPosts();
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                fetchPosts();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function showEditPost(id) {
     fetch(`${API_BASE}/posts/${id}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            const post = data.data;
-            const content = document.getElementById('content');
-            content.innerHTML = `
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const post = data.data;
+                const content = document.getElementById('content');
+                content.innerHTML = `
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Edit Post</h2>
                         <form id="edit-post-form">
                             <input type="text" id="edit-title" value="${post.Title}" required>
-                            <textarea id="edit-content" required>${post.Content}</textarea>
+                            <textarea id="edit-content" required rows="3">${post.Content}</textarea> <!-- Reduced rows -->
                             <button type="submit" class="btn btn-primary">Update Post</button>
                         </form>
                     </div>
                 </div>
             `;
-            document.getElementById('edit-post-form').addEventListener('submit', (e) => updatePost(e, id));
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+                document.getElementById('edit-post-form').addEventListener('submit', (e) => updatePost(e, id));
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function updatePost(e, id) {
@@ -376,33 +378,38 @@ function updatePost(e, id) {
         },
         body: JSON.stringify({ title, content })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showPost(id);
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
-}
-
-function deletePost(id) {
-    if (confirm('Are you sure you want to delete this post?')) {
-        const token = getToken();
-        fetch(`${API_BASE}/posts/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                fetchPosts();
+                showPost(id);
             } else {
                 alert(data.error);
             }
         })
         .catch(err => console.error(err));
+}
+
+function deletePost(id) {
+    console.log(id, '======', currentUserID)
+    if (id === currentUserID) {
+        if (confirm('Are you sure you want to delete this post?')) {
+            const token = getToken();
+            fetch(`${API_BASE}/posts/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchPosts();
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+    } else {
+        alert("You are not authorized to delete this post")
     }
 }
 
@@ -418,26 +425,27 @@ function createComment(e, postId) {
         },
         body: JSON.stringify({ content })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            fetchComments(postId);
-            document.getElementById('comment-content').value = '';
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                fetchComments(postId);
+                document.getElementById('comment-content').value = '';
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function checkHealth() {
     fetch('http://localhost:8080/health')
-    .then(res => res.json())
-    .then(data => console.log(data))
-    .catch(err => console.error(err));
+        .then(res => res.json())
+        .then(data => console.log(data))
+        .catch(err => console.error(err));
 }
 
 // Initial load
 updateNav();
 showHome();
+showProfile();
 // For testing: checkHealth();
