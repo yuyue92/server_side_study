@@ -1,10 +1,8 @@
 启动服务（编译、运行）：go run ./cmd
 
-在项目根目录执行：
+推荐的发布构建命令，在项目根目录执行：
 ```
-go build -o dist/blog-server.exe ./cmd   # Windows
-# 或
-go build -o dist/blog-server ./cmd       # mac/linux
+go build -trimpath -ldflags "-s -w" -o dist/blog-server.exe ./cmd
 ```
 
 完整的博客系统前端界面！这是一个纯HTML+CSS+JavaScript的单页应用，包含以下功能：
