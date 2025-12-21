@@ -1,0 +1,26 @@
+<!-- frontend/index.html (updated slightly for better structure) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Blog</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#" onclick="showHome()">Home</a></li>
+                <li id="auth-link"><a href="#" onclick="showLogin()">Login</a></li>
+                <li id="profile-link" style="display: none;"><a href="#" onclick="showProfile()">Profile</a></li>
+                <li id="logout-link" style="display: none;"><a href="#" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main id="content" class="container">
+        <!-- Content will be loaded here -->
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
