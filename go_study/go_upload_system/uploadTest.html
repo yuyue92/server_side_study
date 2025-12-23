@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Upload Test - Text + Files (Images & Text)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 16px;
+            line-height: 1.4;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+            min-width: 320px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+
+        label {
+            display: block;
+            margin: 8px 0 4px;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 8px 10px;
+            border: 1px solid #aaa;
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f7f7f7;
+        }
+
+        .muted {
+            opacity: .7;
+            font-size: 12px;
+        }
+
+        .danger {
+            border-color: #c0392b;
+            color: #c0392b;
+        }
+
+        .ok {
+            color: #2c7;
+        }
+
+        .list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .postItem {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .postItem .top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .postItem .title {
+            font-weight: 700;
+        }
+
+        .postItem .meta {
+            opacity: .75;
+            font-size: 12px;
+        }
+
+        .hr {
+            height: 1px;
+            background: #eee;
+            margin: 10px 0;
+        }
+
+        .filesGrid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .fileItem {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .fileItem .name {
+            font-weight: 600;
+        }
+
+        .fileItem .meta {
+            opacity: .7;
+            font-size: 12px;
+        }
+
+        img.preview {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            margin-top: 8px;
+        }
+
+        pre {
+            background: #0b1020;
+            color: #e8e8e8;
+            padding: 10px;
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 240px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="margin:0 0 6px;">上传/下载测试：文本 + 图片 + 文本文件</h1>
+    <div class="muted">后端默认：<code>http://127.0.0.1:8080</code>（可改下方 API_BASE）</div>
+
+    <div class="row" style="margin-top: 14px;">
+        <div class="card" style="flex:1;">
+            <h2>1) 创建 Post（文本 + 多文件）</h2>
+
+            <label>API_BASE</label>
+            <input id="apiBase" type="text" value="http://127.0.0.1:8080" />
+
+            <label>Title</label>
+            <input id="title" type="text" placeholder="title..." />
+
+            <label>Body</label>
+            <textarea id="body" placeholder="body..."></textarea>
+
+            <label>Files（支持：jpg/png/gif + txt/md/csv/json/xml/yaml）</label>
+            <input id="files" type="file" multiple />
+
+            <div class="toolbar" style="margin-top: 10px;">
+                <button id="btnUpload">上传</button>
+                <span id="uploadStatus" class="muted"></span>
+            </div>
+            <div class="muted" style="margin-top: 8px;">
+                Tips：如果你直接双击打开本 HTML（file://），也能调用后端（因为后端已开启 CORS）。
+            </div>
+        </div>
+
+        <div class="card" style="flex:1;">
+            <h2>2) Posts 列表（分页）</h2>
+
+            <div class="toolbar">
+                <button id="btnRefresh">刷新列表</button>
+                <label style="margin:0;">page</label>
+                <input id="page" type="text" value="1" style="width:60px;" />
+                <label style="margin:0;">pageSize</label>
+                <input id="pageSize" type="text" value="10" style="width:60px;" />
+                <span id="listStatus" class="muted"></span>
+            </div>
+
+            <div class="hr"></div>
+            <div id="postList" class="list"></div>
+        </div>
+
+        <div class="card" style="flex:1; min-width: 360px;">
+            <h2>3) Post 详情（预览/下载）</h2>
+            <div id="detail" class="muted">请选择左侧某条 Post 点“查看”。</div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        function apiBase() {
+            return $("apiBase").value.trim().replace(/\/+$/, "");
+        }
+
+        function fmtTime(iso) {
+            try { return new Date(iso).toLocaleString(); } catch { return iso; }
+        }
+
+        function bytes(n) {
+            if (n < 1024) return n + " B";
+            if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+            return (n / 1024 / 1024).toFixed(2) + " MB";
+        }
+
+        async function upload() {
+            $("uploadStatus").textContent = "上传中...";
+            $("uploadStatus").className = "muted";
+
+            const fd = new FormData();
+            fd.append("title", $("title").value);
+            fd.append("body", $("body").value);
+
+            const files = $("files").files;
+            for (const f of files) fd.append("files", f);
+
+            try {
+                const resp = await fetch(apiBase() + "/api/posts", {
+                    method: "POST",
+                    body: fd
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+
+                $("uploadStatus").textContent = "✅ 上传成功：postId=" + data.id;
+                $("uploadStatus").className = "muted ok";
+
+                // 清空输入并刷新
+                $("title").value = "";
+                $("body").value = "";
+                $("files").value = "";
+                await refreshList();
+            } catch (e) {
+                $("uploadStatus").textContent = "❌ " + e.message;
+                $("uploadStatus").className = "muted danger";
+            }
+        }
+
+        async function refreshList() {
+            $("listStatus").textContent = "加载中...";
+            $("listStatus").className = "muted";
+
+            const page = parseInt($("page").value || "1", 10) || 1;
+            const pageSize = parseInt($("pageSize").value || "10", 10) || 10;
+
+            try {
+                const url = new URL(apiBase() + "/api/posts");
+                url.searchParams.set("page", page);
+                url.searchParams.set("pageSize", pageSize);
+
+                const resp = await fetch(url.toString());
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+
+                renderList(data.items || []);
+                $("listStatus").textContent = `共 ${data.items?.length || 0} 条（page=${data.page} size=${data.pageSize}）`;
+                $("listStatus").className = "muted";
+            } catch (e) {
+                $("listStatus").textContent = "❌ " + e.message;
+                $("listStatus").className = "muted danger";
+            }
+        }
+
+        function renderList(items) {
+            const root = $("postList");
+            root.innerHTML = "";
+
+            if (!items.length) {
+                root.innerHTML = `<div class="muted">暂无数据</div>`;
+                return;
+            }
+
+            for (const p of items) {
+                const el = document.createElement("div");
+                el.className = "postItem";
+                el.innerHTML = `
+        <div class="top">
+          <div>
+            <div class="title">#${p.id} - ${escapeHtml(p.title)}</div>
+            <div class="meta">${fmtTime(p.createdAt)} | bodyLen=${(p.body || "").length}</div>
+          </div>
+          <div class="toolbar">
+            <button data-act="view">查看</button>
+            <button class="danger" data-act="del">删除</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${escapeHtml(p.body || "")}
+        </div>
+      `;
+                el.querySelector('[data-act="view"]').onclick = () => viewPost(p.id);
+                el.querySelector('[data-act="del"]').onclick = () => delPost(p.id);
+                root.appendChild(el);
+            }
+        }
+
+        async function viewPost(id) {
+            $("detail").innerHTML = `<div class="muted">加载 post #${id} ...</div>`;
+            try {
+                const resp = await fetch(apiBase() + "/api/posts/" + id);
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+
+                renderDetail(data);
+            } catch (e) {
+                $("detail").innerHTML = `<div class="muted danger">❌ ${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        function renderDetail(p) {
+            const files = p.files || [];
+            const htmlFiles = files.map(f => {
+                const fileUrl = apiBase() + "/files/" + f.id;
+                const downloadUrl = fileUrl + "?download=1";
+                const inlineUrl = fileUrl + "?download=0"; // 预览文本用
+
+                const base = `
+        <div class="fileItem">
+          <div class="name">${escapeHtml(f.origName)} <span class="muted">(#${f.id})</span></div>
+          <div class="meta">${escapeHtml(f.kind)} | ${escapeHtml(f.mime)} | ${bytes(f.sizeBytes)} | ${fmtTime(f.createdAt)}</div>
+          <div class="toolbar" style="margin-top:6px;">
+            <a href="${downloadUrl}" target="_blank" rel="noreferrer">下载</a>
+          </div>
+      `;
+
+                if (f.kind === "image") {
+                    return base + `
+          <img class="preview" src="${fileUrl}" alt="img-${f.id}" />
+        </div>
+        `;
+                } else {
+                    // text: 提供预览按钮
+                    return base + `
+          <div class="toolbar" style="margin-top:8px;">
+            <button data-preview="${f.id}">预览文本</button>
+            <button data-hide="${f.id}">收起</button>
+          </div>
+          <div id="pre-${f.id}" style="display:none; margin-top:8px;"></div>
+        </div>
+        `;
+                }
+            }).join("");
+
+            $("detail").innerHTML = `
+      <div>
+        <div style="font-weight:800;">#${p.id} - ${escapeHtml(p.title)}</div>
+        <div class="muted">${fmtTime(p.createdAt)}</div>
+        <div class="hr"></div>
+        <div style="white-space:pre-wrap;">${escapeHtml(p.body)}</div>
+        <div class="hr"></div>
+        <div style="font-weight:700; margin-bottom:8px;">附件（${files.length}）</div>
+        <div class="filesGrid">${htmlFiles || `<div class="muted">无附件</div>`}</div>
+      </div>
+    `;
+
+            // 绑定文本预览
+            for (const f of files) {
+                if (f.kind !== "text") continue;
+
+                const btnPrev = document.querySelector(`button[data-preview="${f.id}"]`);
+                const btnHide = document.querySelector(`button[data-hide="${f.id}"]`);
+                const holder = $("pre-" + f.id);
+
+                btnPrev.onclick = async () => {
+                    holder.style.display = "block";
+                    holder.innerHTML = `<div class="muted">加载中...</div>`;
+                    try {
+                        const resp = await fetch(apiBase() + "/files/" + f.id + "?download=0");
+                        if (!resp.ok) throw new Error("HTTP " + resp.status);
+                        const text = await resp.text();
+                        // 限制显示长度，避免大文件卡死页面
+                        const shown = text.length > 5000 ? (text.slice(0, 5000) + "\n\n... (已截断，下载查看完整)") : text;
+                        holder.innerHTML = `<pre>${escapeHtml(shown)}</pre>`;
+                    } catch (e) {
+                        holder.innerHTML = `<div class="muted danger">❌ ${escapeHtml(e.message)}</div>`;
+                    }
+                };
+
+                btnHide.onclick = () => {
+                    holder.style.display = "none";
+                    holder.innerHTML = "";
+                };
+            }
+        }
+
+        async function delPost(id) {
+            if (!confirm("确定删除 post #" + id + " ?")) return;
+
+            $("listStatus").textContent = "删除中...";
+            try {
+                const resp = await fetch(apiBase() + "/api/posts/" + id, { method: "DELETE" });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+                $("listStatus").textContent = "✅ 已删除 #" + id;
+                await refreshList();
+                $("detail").innerHTML = `<div class="muted">已删除 #${id}，请选择其他 Post。</div>`;
+            } catch (e) {
+                $("listStatus").textContent = "❌ " + e.message;
+                $("listStatus").className = "muted danger";
+            }
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        $("btnUpload").onclick = upload;
+        $("btnRefresh").onclick = refreshList;
+
+        // 初始加载
+        refreshList();
+    </script>
+</body>
+
+</html>
