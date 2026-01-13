@@ -3,6 +3,10 @@
 # 任选其一（npm/pnpm/yarn/bun 都行）
 npm create tauri-app@latest
 # 然后按提示选择：项目名、包管理器、前端框架（比如 React + TS）
+进入目录后启动开发：
+cd your-app
+npm install
+npm run tauri dev
 ```
 
 一套 Windows 开发环境 + Tauri v2 + React（纯 JS，非 TS） 的「能直接跑起来」示例：
