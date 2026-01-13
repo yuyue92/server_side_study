@@ -1,0 +1,369 @@
+:root {
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --text: #212529;
+  --muted: #6c757d;
+  --border: #dee2e6;
+
+  --primary: #0d6efd;
+  --secondary: #6c757d;
+  --danger: #dc3545;
+}
+
+body[data-theme="dark"] {
+  --bg: #0f1115;
+  --card: #161a20;
+  --text: #e9edf1;
+  --muted: #9aa4af;
+  --border: #2a2f38;
+}
+
+
+/* :root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  --primary: #0d6efd;
+  --secondary: #6c757d;
+  --danger: #dc3545;
+  --border: #dee2e6;
+  --bg: #f8f9fa;
+  --text: #212529;
+} */
+
+/* ===== 全局 ===== */
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+code {
+  background: #eef1f4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ===== 布局 ===== */
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* ===== Tabs（类似 Bootstrap nav-tabs） ===== */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* ===== 内容区 ===== */
+
+.content {
+  margin-top: 16px;
+}
+
+/* ===== Footer ===== */
+
+.footer {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* ===== Card ===== */
+
+.card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-color: var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* ===== 布局工具 ===== */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gap {
+  gap: 10px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ===== 表单 ===== */
+
+.input,
+.select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* ===== 按钮 ===== */
+
+.btn {
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.btn.secondary {
+  background: var(--secondary);
+  border-color: var(--secondary);
+}
+
+.btn.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ===== 列表 ===== */
+
+.list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ===== 状态 ===== */
+
+.text.done {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.empty {
+  color: #6c757d;
+  padding: 12px;
+}
+
+/* ===== Segmented Control ===== */
+
+.seg {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  min-width: 260px;
+}
+
+.seg-btn {
+  background: #fff;
+  color: var(--text);
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.seg-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ===== 表单区 ===== */
+
+.form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ===== 文本 ===== */
+
+.strong {
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ===== Badge ===== */
+
+.badge {
+  margin-left: 8px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e9ecef;
+  color: #495057;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.08);
+}
+
+.tab.active {
+  box-shadow: 0 0.25rem 0.75rem rgba(13, 110, 253, 0.35);
+}
+.content > .card {
+  margin-top: 16px;
+}
+.item {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.item:hover {
+  background: #fdfefe;
+  transform: translateY(-1px);
+  box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.08);
+}
+.item-left .strong {
+  font-size: 14px;
+}
+
+.item-left .muted {
+  margin-top: 2px;
+}
+.empty {
+  text-align: center;
+  background: #f8f9fa;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.seg-btn {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.seg-btn:hover:not(.active) {
+  background: #f1f3f5;
+}
+.btn {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.12s ease,
+    transform 0.05s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+/* 桌面应用：整体可点区域更大 */
+.tab,
+.btn,
+.seg-btn {
+  min-height: 32px;
+}
+
+/* 列表项更“稳”，减少网页漂浮感 */
+.item:hover {
+  transform: translateY(-0.5px);
+}
+
+/* 禁用文本选择（桌面工具常见） */
+.topbar,
+.tabs,
+.btn,
+.tab {
+  user-select: none;
+}
+.content {
+  overscroll-behavior: contain;
+}
+.item.selected {
+  background: rgba(13, 110, 253, 0.08);
+  border-color: rgba(13, 110, 253, 0.4);
+}
+
+.item.selected:hover {
+  background: rgba(13, 110, 253, 0.12);
+}
+.list.has-selection {
+  outline: 2px dashed rgba(13, 110, 253, 0.3);
+  outline-offset: 4px;
+}
