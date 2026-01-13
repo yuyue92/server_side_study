@@ -26,9 +26,8 @@
 
 三、打包应用： npm run tauri build
 
-```
-
 ## 📁 完整文件结构
+
 ```
 order-management-system/
 ├── src/
