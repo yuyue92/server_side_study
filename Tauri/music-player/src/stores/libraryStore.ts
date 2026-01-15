@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
-import type { Track } from '../types';
+import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
+import type { Track } from "../types";
 
 type LibraryStore = {
     tracks: Track[];
@@ -32,30 +32,30 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     fetchTracks: async () => {
         set({ loading: true, error: null });
         try {
-            const tracks = await invoke<Track[]>('get_library');
+            const tracks = await invoke<Track[]>("get_library");
             set({ tracks: uniqByFilePath(tracks ?? []), loading: false });
-        } catch (error) {
-            set({ error: String(error), loading: false });
+        } catch (e) {
+            set({ error: String(e), loading: false });
         }
     },
 
     scanFolder: async (path: string) => {
         set({ loading: true, error: null });
         try {
-            const newTracks = await invoke<Track[]>('scan_music_folder', { folderPath: path });
+            const newTracks = await invoke<Track[]>("scan_music_folder", { folderPath: path });
             const merged = uniqByFilePath([...(get().tracks ?? []), ...(newTracks ?? [])]);
             set({ tracks: merged, loading: false });
-        } catch (error) {
-            set({ error: String(error), loading: false });
+        } catch (e) {
+            set({ error: String(e), loading: false });
         }
     },
 
     searchTracks: async (query: string) => {
         try {
-            const results = await invoke<Track[]>('search_tracks', { query });
+            const results = await invoke<Track[]>("search_tracks", { query });
             return results ?? [];
-        } catch (error) {
-            console.error('Search failed:', error);
+        } catch (e) {
+            console.error("Search failed:", e);
             return [];
         }
     },

@@ -1,7 +1,5 @@
-import { create } from 'zustand';
-import type { PlayerState, Track } from '../types';
-
-type RepeatMode = PlayerState['repeat'];
+import { create } from "zustand";
+import type { Track, PlayerState } from "../types";
 
 type PlayerStore = PlayerState & {
     setCurrentTrack: (track: Track) => void;
@@ -36,15 +34,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     duration: 0,
     queue: [],
     shuffle: false,
-    repeat: 'none',
+    repeat: "none",
 
-    setCurrentTrack: (track) =>
-        set({
-            currentTrack: track,
-            currentTime: 0,
-            duration: 0,
-        }),
-
+    setCurrentTrack: (track) => set({ currentTrack: track, currentTime: 0, duration: 0 }),
     setIsPlaying: (playing) => set({ isPlaying: playing }),
     setVolume: (volume) => set({ volume: clamp01(volume) }),
     setCurrentTime: (time) => set({ currentTime: Math.max(0, time) }),
@@ -58,36 +50,27 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         const currentIndex = queue.findIndex((t) => sameTrack(t, currentTrack));
         if (currentIndex < 0) return;
 
-        // repeat-one：这里不处理（Player.tsx 的 ended 已经处理），避免重复逻辑打架
-        if (repeat === 'one') return;
+        if (repeat === "one") return;
 
         let nextIndex = currentIndex + 1;
 
         if (shuffle && queue.length > 1) {
-            // 随机选一个不同于当前的
             let tries = 10;
             do {
                 nextIndex = Math.floor(Math.random() * queue.length);
                 tries -= 1;
             } while (tries > 0 && nextIndex === currentIndex);
         } else {
-            // 非 shuffle：走顺序
             if (nextIndex >= queue.length) {
-                if (repeat === 'all') {
-                    nextIndex = 0;
-                } else {
-                    // repeat none 且到最后一首：停止播放（修复“最后一首无限循环”）
+                if (repeat === "all") nextIndex = 0;
+                else {
                     set({ isPlaying: false });
                     return;
                 }
             }
         }
 
-        set({
-            currentTrack: queue[nextIndex],
-            currentTime: 0,
-            duration: 0,
-        });
+        set({ currentTrack: queue[nextIndex], currentTime: 0, duration: 0 });
     },
 
     previousTrack: () => {
@@ -109,17 +92,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
             if (prevIndex < 0) prevIndex = queue.length - 1;
         }
 
-        set({
-            currentTrack: queue[prevIndex],
-            currentTime: 0,
-            duration: 0,
-        });
+        set({ currentTrack: queue[prevIndex], currentTime: 0, duration: 0 });
     },
 
-    toggleShuffle: () => set((state) => ({ shuffle: !state.shuffle })),
+    toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
     toggleRepeat: () =>
-        set((state) => {
-            const next: RepeatMode = state.repeat === 'none' ? 'all' : state.repeat === 'all' ? 'one' : 'none';
-            return { repeat: next };
-        }),
+        set((s) => ({
+            repeat: s.repeat === "none" ? "all" : s.repeat === "all" ? "one" : "none",
+        })),
 }));
