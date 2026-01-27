@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "API Debugger",
+  "version": "1.0.0",
+  "identifier": "com.api-debugger.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "API Debugger - 企业级接口调试工具",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "copyright": "Copyright © 2024",
+    "category": "DeveloperTool",
+    "shortDescription": "企业级 API 调试工具",
+    "longDescription": "基于 Tauri v2 + React + Tailwind 的轻量级 API 调试工具，支持 HTTP 请求、SSE 长连接、加密请求等功能。"
+  },
+  "plugins": {
+    "dialog": {},
+    "fs": {
+      "scope": ["$APP/*", "$DOWNLOAD/*", "$DOCUMENT/*"]
+    }
+  }
+}

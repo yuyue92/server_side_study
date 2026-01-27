@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  background-color: #0a0e14;
+  color: #e4e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #11151c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d3548;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3d4560;
+}
+
+/* 选择文本颜色 */
+::selection {
+  background: rgba(79, 195, 247, 0.3);
+  color: #e4e8f0;
+}
+
+/* 输入框样式 */
+input,
+textarea,
+select {
+  font-family: inherit;
+  background: #11151c;
+  border: 1px solid #2d3548;
+  color: #e4e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #4fc3f7;
+  box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #5c6478;
+}
+
+/* 按钮基础样式 */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 代码块样式 */
+pre,
+code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* 动画类 */
+@layer utilities {
+  .animate-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .slide-in-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .slide-in-down {
+    animation: slideDown 0.2s ease-out;
+  }
+}
+
+/* 分隔线样式 */
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #2d3548 20%,
+    #2d3548 80%,
+    transparent
+  );
+}
+
+/* 闪烁光标效果 */
+.cursor-blink::after {
+  content: "▌";
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 状态指示器 */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.success {
+  background: #66bb6a;
+  box-shadow: 0 0 8px rgba(102, 187, 106, 0.5);
+}
+
+.status-dot.error {
+  background: #ef5350;
+  box-shadow: 0 0 8px rgba(239, 83, 80, 0.5);
+}
+
+.status-dot.pending {
+  background: #ffb74d;
+  box-shadow: 0 0 8px rgba(255, 183, 77, 0.5);
+  animation: pulse 1.5s infinite;
+}
+
+/* 网格背景 */
+.grid-bg {
+  background-image: linear-gradient(
+      rgba(79, 195, 247, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(79, 195, 247, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* 渐变边框 */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #4fc3f7, #ab47bc);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Tab 切换样式 */
+.tab-active {
+  position: relative;
+}
+
+.tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4fc3f7, #26c6da);
+  border-radius: 2px 2px 0 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
