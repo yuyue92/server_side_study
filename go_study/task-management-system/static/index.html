@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - 任务管理系统</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="bi bi-kanban"></i>
+                    <span>TaskFlow</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-page="dashboard">
+                        <i class="bi bi-grid-1x2"></i>
+                        <span>仪表盘</span>
+                    </li>
+                    <li class="nav-item" data-page="tasks">
+                        <i class="bi bi-check2-square"></i>
+                        <span>任务管理</span>
+                    </li>
+                    <li class="nav-item" data-page="projects">
+                        <i class="bi bi-folder"></i>
+                        <span>项目管理</span>
+                    </li>
+                    <li class="nav-item" data-page="users">
+                        <i class="bi bi-people"></i>
+                        <span>团队成员</span>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">管理员</span>
+                        <span class="user-role">Admin</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航 -->
+            <header class="top-header">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="header-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="搜索任务..." id="globalSearch">
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="quickAddTask">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>新建任务</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <div class="page-content">
+                <!-- 仪表盘页面 -->
+                <section class="page" id="page-dashboard">
+                    <div class="page-header">
+                        <h1>仪表盘</h1>
+                        <p class="text-muted">欢迎回来，查看今日工作概览</p>
+                    </div>
+                    
+                    <!-- 统计卡片 -->
+                    <div class="stats-grid">
+                        <div class="stat-card stat-total">
+                            <div class="stat-icon">
+                                <i class="bi bi-list-task"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-total">0</span>
+                                <span class="stat-label">总任务数</span>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-todo">
+                            <div class="stat-icon">
+                                <i class="bi bi-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-todo">0</span>
+                                <span class="stat-label">待办任务</span>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-progress">
+                            <div class="stat-icon">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-progress">0</span>
+                                <span class="stat-label">进行中</span>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-completed">
+                            <div class="stat-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-completed">0</span>
+                                <span class="stat-label">已完成</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图表和列表区域 -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3><i class="bi bi-clock-history"></i> 最近任务</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="recent-tasks" id="recent-tasks">
+                                    <!-- 动态加载 -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3><i class="bi bi-exclamation-triangle"></i> 需要关注</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="attention-items">
+                                    <div class="attention-item danger">
+                                        <i class="bi bi-calendar-x"></i>
+                                        <span>逾期任务</span>
+                                        <span class="badge" id="overdue-count">0</span>
+                                    </div>
+                                    <div class="attention-item warning">
+                                        <i class="bi bi-calendar-event"></i>
+                                        <span>今日到期</span>
+                                        <span class="badge" id="today-count">0</span>
+                                    </div>
+                                    <div class="attention-item info">
+                                        <i class="bi bi-folder2-open"></i>
+                                        <span>活跃项目</span>
+                                        <span class="badge" id="project-count">0</span>
+                                    </div>
+                                    <div class="attention-item success">
+                                        <i class="bi bi-people-fill"></i>
+                                        <span>团队成员</span>
+                                        <span class="badge" id="user-count">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 任务管理页面 -->
+                <section class="page hidden" id="page-tasks">
+                    <div class="page-header">
+                        <div>
+                            <h1>任务管理</h1>
+                            <p class="text-muted">管理和跟踪所有任务</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openTaskModal()">
+                            <i class="bi bi-plus-lg"></i> 新建任务
+                        </button>
+                    </div>
+
+                    <!-- 过滤和搜索 -->
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <select class="form-select" id="filter-status">
+                                <option value="">所有状态</option>
+                                <option value="todo">待办</option>
+                                <option value="in_progress">进行中</option>
+                                <option value="completed">已完成</option>
+                            </select>
+                            <select class="form-select" id="filter-priority">
+                                <option value="">所有优先级</option>
+                                <option value="high">高</option>
+                                <option value="medium">中</option>
+                                <option value="low">低</option>
+                            </select>
+                            <select class="form-select" id="filter-project">
+                                <option value="">所有项目</option>
+                            </select>
+                            <select class="form-select" id="filter-assignee">
+                                <option value="">所有成员</option>
+                            </select>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="btn btn-icon active" data-view="list" title="列表视图">
+                                <i class="bi bi-list-ul"></i>
+                            </button>
+                            <button class="btn btn-icon" data-view="kanban" title="看板视图">
+                                <i class="bi bi-kanban"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 任务列表视图 -->
+                    <div class="task-list-view" id="task-list-view">
+                        <div class="task-table">
+                            <div class="task-table-header">
+                                <div class="col-check"><input type="checkbox" id="selectAll"></div>
+                                <div class="col-title">任务名称</div>
+                                <div class="col-project">项目</div>
+                                <div class="col-assignee">负责人</div>
+                                <div class="col-priority">优先级</div>
+                                <div class="col-status">状态</div>
+                                <div class="col-due">截止日期</div>
+                                <div class="col-actions">操作</div>
+                            </div>
+                            <div class="task-table-body" id="task-table-body">
+                                <!-- 动态加载 -->
+                            </div>
+                        </div>
+                        <div class="pagination" id="task-pagination">
+                            <!-- 动态加载 -->
+                        </div>
+                    </div>
+
+                    <!-- 看板视图 -->
+                    <div class="kanban-view hidden" id="kanban-view">
+                        <div class="kanban-board">
+                            <div class="kanban-column" data-status="todo">
+                                <div class="kanban-header">
+                                    <span class="status-dot todo"></span>
+                                    <h4>待办</h4>
+                                    <span class="count" id="kanban-todo-count">0</span>
+                                </div>
+                                <div class="kanban-tasks" id="kanban-todo">
+                                    <!-- 动态加载 -->
+                                </div>
+                            </div>
+                            <div class="kanban-column" data-status="in_progress">
+                                <div class="kanban-header">
+                                    <span class="status-dot in-progress"></span>
+                                    <h4>进行中</h4>
+                                    <span class="count" id="kanban-progress-count">0</span>
+                                </div>
+                                <div class="kanban-tasks" id="kanban-progress">
+                                    <!-- 动态加载 -->
+                                </div>
+                            </div>
+                            <div class="kanban-column" data-status="completed">
+                                <div class="kanban-header">
+                                    <span class="status-dot completed"></span>
+                                    <h4>已完成</h4>
+                                    <span class="count" id="kanban-completed-count">0</span>
+                                </div>
+                                <div class="kanban-tasks" id="kanban-completed">
+                                    <!-- 动态加载 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 项目管理页面 -->
+                <section class="page hidden" id="page-projects">
+                    <div class="page-header">
+                        <div>
+                            <h1>项目管理</h1>
+                            <p class="text-muted">管理所有项目及其任务</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openProjectModal()">
+                            <i class="bi bi-plus-lg"></i> 新建项目
+                        </button>
+                    </div>
+
+                    <div class="projects-grid" id="projects-grid">
+                        <!-- 动态加载 -->
+                    </div>
+                </section>
+
+                <!-- 团队成员页面 -->
+                <section class="page hidden" id="page-users">
+                    <div class="page-header">
+                        <div>
+                            <h1>团队成员</h1>
+                            <p class="text-muted">管理团队成员信息</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openUserModal()">
+                            <i class="bi bi-plus-lg"></i> 添加成员
+                        </button>
+                    </div>
+
+                    <div class="users-grid" id="users-grid">
+                        <!-- 动态加载 -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- 任务模态框 -->
+    <div class="modal-overlay hidden" id="task-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="task-modal-title">新建任务</h3>
+                <button class="btn-close" onclick="closeTaskModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="task-form" onsubmit="saveTask(event)">
+                <input type="hidden" id="task-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="task-title">任务名称 <span class="required">*</span></label>
+                        <input type="text" id="task-title" class="form-control" required placeholder="输入任务名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-description">任务描述</label>
+                        <textarea id="task-description" class="form-control" rows="3" placeholder="描述任务详情..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="task-project">所属项目</label>
+                            <select id="task-project" class="form-select">
+                                <option value="">无项目</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-assignee">负责人</label>
+                            <select id="task-assignee" class="form-select">
+                                <option value="">未分配</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="task-priority">优先级</label>
+                            <select id="task-priority" class="form-select">
+                                <option value="low">低</option>
+                                <option value="medium" selected>中</option>
+                                <option value="high">高</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-due">截止日期</label>
+                            <input type="date" id="task-due" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row" id="task-status-row" style="display: none;">
+                        <div class="form-group">
+                            <label for="task-status">状态</label>
+                            <select id="task-status" class="form-select">
+                                <option value="todo">待办</option>
+                                <option value="in_progress">进行中</option>
+                                <option value="completed">已完成</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-progress">进度 (<span id="progress-value">0</span>%)</label>
+                            <input type="range" id="task-progress" class="form-range" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 项目模态框 -->
+    <div class="modal-overlay hidden" id="project-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="project-modal-title">新建项目</h3>
+                <button class="btn-close" onclick="closeProjectModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="project-form" onsubmit="saveProject(event)">
+                <input type="hidden" id="project-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="project-name">项目名称 <span class="required">*</span></label>
+                        <input type="text" id="project-name" class="form-control" required placeholder="输入项目名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-description">项目描述</label>
+                        <textarea id="project-description" class="form-control" rows="3" placeholder="描述项目详情..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="project-manager">项目经理</label>
+                            <select id="project-manager" class="form-select">
+                                <option value="">未分配</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="project-status-group" style="display: none;">
+                            <label for="project-status">项目状态</label>
+                            <select id="project-status" class="form-select">
+                                <option value="planning">计划中</option>
+                                <option value="in_progress">进行中</option>
+                                <option value="completed">已完成</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="project-start">开始日期</label>
+                            <input type="date" id="project-start" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="project-end">结束日期</label>
+                            <input type="date" id="project-end" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 用户模态框 -->
+    <div class="modal-overlay hidden" id="user-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3>添加成员</h3>
+                <button class="btn-close" onclick="closeUserModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="user-form" onsubmit="saveUser(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="user-name">姓名 <span class="required">*</span></label>
+                        <input type="text" id="user-name" class="form-control" required placeholder="输入姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">邮箱 <span class="required">*</span></label>
+                        <input type="email" id="user-email" class="form-control" required placeholder="输入邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">角色</label>
+                        <select id="user-role" class="form-select">
+                            <option value="team_member">团队成员</option>
+                            <option value="project_manager">项目经理</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 确认删除模态框 -->
+    <div class="modal-overlay hidden" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <button class="btn-close" onclick="closeConfirmModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">确定要删除吗？此操作不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">取消</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
