@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "description": "场景8：一对多 - 学校管理（学校→班级→学生，三级层级结构）",
+  "tables": [
+    {
+      "name": "school",
+      "description": "学校",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 100, "required": true, "comment": "学校名称" },
+        { "name": "code", "type": "string", "length": 20, "required": true, "unique": true, "comment": "学校编码" },
+        { "name": "address", "type": "string", "length": 200, "required": false, "comment": "地址" },
+        { "name": "principal", "type": "string", "length": 50, "required": false, "comment": "校长" },
+        { "name": "phone", "type": "string", "length": 20, "required": false, "comment": "联系电话" }
+      ]
+    },
+    {
+      "name": "classroom",
+      "description": "班级",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "school_id", "type": "number", "required": true, "comment": "学校ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "班级名称" },
+        { "name": "grade", "type": "number", "required": true, "comment": "年级" },
+        { "name": "teacher_name", "type": "string", "length": 50, "required": false, "comment": "班主任" },
+        { "name": "capacity", "type": "number", "required": false, "default": 50, "comment": "容量" }
+      ]
+    },
+    {
+      "name": "student",
+      "description": "学生",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "classroom_id", "type": "number", "required": true, "comment": "班级ID" },
+        { "name": "student_no", "type": "string", "length": 20, "required": true, "unique": true, "comment": "学号" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "姓名" },
+        { "name": "gender", "type": "number", "required": true, "comment": "性别: 1男 2女", "enum": [1, 2] },
+        { "name": "birthday", "type": "date", "required": false, "comment": "出生日期" },
+        { "name": "parent_phone", "type": "string", "length": 20, "required": false, "comment": "家长电话" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "classroom", "to": "school", "type": "one-to-many", "foreignKey": "school_id", "referenceKey": "id" },
+    { "from": "student", "to": "classroom", "type": "one-to-many", "foreignKey": "classroom_id", "referenceKey": "id" }
+  ]
+}

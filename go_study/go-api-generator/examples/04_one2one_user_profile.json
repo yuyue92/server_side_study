@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "description": "场景4：一对一 - 用户与用户档案（账号信息与个人详情分离）",
+  "tables": [
+    {
+      "name": "user",
+      "description": "用户",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "username", "type": "string", "length": 50, "required": true, "unique": true, "comment": "用户名" },
+        { "name": "email", "type": "string", "length": 100, "format": "email", "required": true, "unique": true, "comment": "邮箱" },
+        { "name": "password", "type": "string", "length": 128, "required": true, "comment": "密码" },
+        { "name": "status", "type": "number", "required": true, "default": 1, "comment": "状态: 0禁用 1正常", "enum": [0, 1] }
+      ]
+    },
+    {
+      "name": "user_profile",
+      "description": "用户档案",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "user_id", "type": "number", "required": true, "unique": true, "comment": "用户ID" },
+        { "name": "real_name", "type": "string", "length": 50, "required": false, "comment": "真实姓名" },
+        { "name": "phone", "type": "string", "length": 20, "required": false, "comment": "手机号" },
+        { "name": "gender", "type": "number", "required": false, "default": 0, "comment": "性别: 0未知 1男 2女", "enum": [0, 1, 2] },
+        { "name": "birthday", "type": "date", "required": false, "comment": "生日" },
+        { "name": "avatar", "type": "string", "length": 500, "format": "url", "required": false, "comment": "头像" },
+        { "name": "address", "type": "string", "length": 200, "required": false, "comment": "地址" },
+        { "name": "bio", "type": "text", "required": false, "comment": "个人简介" }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "user_profile",
+      "to": "user",
+      "type": "one-to-one",
+      "foreignKey": "user_id",
+      "referenceKey": "id"
+    }
+  ]
+}

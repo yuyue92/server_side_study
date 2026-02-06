@@ -1,0 +1,116 @@
+{
+  "version": "1.0",
+  "description": "场景12：综合复杂 - 项目管理系统（混合一对一 + 一对多 + 多对多，7张表）",
+  "tables": [
+    {
+      "name": "member",
+      "description": "成员",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "uuid", "type": "string", "length": 36, "format": "uuid", "required": true, "unique": true, "comment": "UUID" },
+        { "name": "username", "type": "string", "length": 50, "required": true, "unique": true, "comment": "用户名" },
+        { "name": "email", "type": "string", "length": 100, "format": "email", "required": true, "unique": true, "comment": "邮箱" },
+        { "name": "password", "type": "string", "length": 128, "required": true, "comment": "密码" },
+        { "name": "role", "type": "string", "length": 20, "required": true, "default": "developer", "comment": "角色: admin/pm/developer/tester" }
+      ]
+    },
+    {
+      "name": "member_setting",
+      "description": "成员设置",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "member_id", "type": "number", "required": true, "unique": true, "comment": "成员ID" },
+        { "name": "theme", "type": "string", "length": 20, "required": false, "default": "light", "comment": "主题: light/dark" },
+        { "name": "language", "type": "string", "length": 10, "required": false, "default": "zh-CN", "comment": "语言" },
+        { "name": "notify_email", "type": "boolean", "required": false, "default": true, "comment": "邮件通知" },
+        { "name": "notify_browser", "type": "boolean", "required": false, "default": true, "comment": "浏览器通知" }
+      ]
+    },
+    {
+      "name": "project",
+      "description": "项目",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 100, "required": true, "comment": "项目名称" },
+        { "name": "code", "type": "string", "length": 20, "required": true, "unique": true, "comment": "项目代号(如PRJ-001)" },
+        { "name": "description", "type": "text", "required": false, "comment": "项目描述" },
+        { "name": "owner_id", "type": "number", "required": true, "comment": "负责人ID" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0规划中 1进行中 2已暂停 3已完成 4已归档", "enum": [0, 1, 2, 3, 4] },
+        { "name": "start_date", "type": "date", "required": false, "comment": "开始日期" },
+        { "name": "end_date", "type": "date", "required": false, "comment": "截止日期" }
+      ]
+    },
+    {
+      "name": "project_member",
+      "description": "项目成员关联",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "project_id", "type": "number", "required": true, "comment": "项目ID" },
+        { "name": "member_id", "type": "number", "required": true, "comment": "成员ID" },
+        { "name": "role_in_project", "type": "string", "length": 20, "required": true, "default": "member", "comment": "项目中角色: owner/admin/member" },
+        { "name": "joined_at", "type": "date", "required": false, "comment": "加入时间" }
+      ]
+    },
+    {
+      "name": "task",
+      "description": "任务",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "project_id", "type": "number", "required": true, "comment": "所属项目ID" },
+        { "name": "title", "type": "string", "length": 200, "required": true, "comment": "任务标题" },
+        { "name": "description", "type": "text", "required": false, "comment": "任务描述" },
+        { "name": "assignee_id", "type": "number", "required": false, "comment": "指派人ID" },
+        { "name": "reporter_id", "type": "number", "required": true, "comment": "创建人ID" },
+        { "name": "priority", "type": "number", "required": true, "default": 1, "comment": "优先级: 0最低 1低 2中 3高 4紧急", "enum": [0, 1, 2, 3, 4] },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0待办 1进行中 2评审中 3已完成 4已关闭", "enum": [0, 1, 2, 3, 4] },
+        { "name": "task_type", "type": "string", "length": 20, "required": true, "default": "feature", "comment": "类型: feature/bug/improvement/task" },
+        { "name": "estimated_hours", "type": "float", "required": false, "comment": "预估工时" },
+        { "name": "actual_hours", "type": "float", "required": false, "comment": "实际工时" },
+        { "name": "due_date", "type": "date", "required": false, "comment": "截止日期" },
+        { "name": "parent_id", "type": "number", "required": false, "default": 0, "comment": "父任务ID(子任务)" }
+      ]
+    },
+    {
+      "name": "task_comment",
+      "description": "任务评论",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "task_id", "type": "number", "required": true, "comment": "任务ID" },
+        { "name": "member_id", "type": "number", "required": true, "comment": "评论人ID" },
+        { "name": "content", "type": "text", "required": true, "comment": "评论内容" }
+      ]
+    },
+    {
+      "name": "task_log",
+      "description": "任务操作日志",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "task_id", "type": "number", "required": true, "comment": "任务ID" },
+        { "name": "member_id", "type": "number", "required": true, "comment": "操作人ID" },
+        { "name": "action", "type": "string", "length": 50, "required": true, "comment": "操作(created/status_changed/assigned/commented)" },
+        { "name": "old_value", "type": "string", "length": 200, "required": false, "comment": "变更前" },
+        { "name": "new_value", "type": "string", "length": 200, "required": false, "comment": "变更后" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "member_setting", "to": "member", "type": "one-to-one", "foreignKey": "member_id", "referenceKey": "id" },
+    { "from": "project", "to": "member", "type": "one-to-many", "foreignKey": "owner_id", "referenceKey": "id" },
+    { "from": "project_member", "to": "project", "type": "many-to-many", "foreignKey": "project_id", "referenceKey": "id" },
+    { "from": "project_member", "to": "member", "type": "many-to-many", "foreignKey": "member_id", "referenceKey": "id" },
+    { "from": "task", "to": "project", "type": "one-to-many", "foreignKey": "project_id", "referenceKey": "id" },
+    { "from": "task", "to": "member", "type": "one-to-many", "foreignKey": "assignee_id", "referenceKey": "id" },
+    { "from": "task", "to": "member", "type": "one-to-many", "foreignKey": "reporter_id", "referenceKey": "id" },
+    { "from": "task_comment", "to": "task", "type": "one-to-many", "foreignKey": "task_id", "referenceKey": "id" },
+    { "from": "task_comment", "to": "member", "type": "one-to-many", "foreignKey": "member_id", "referenceKey": "id" },
+    { "from": "task_log", "to": "task", "type": "one-to-many", "foreignKey": "task_id", "referenceKey": "id" },
+    { "from": "task_log", "to": "member", "type": "one-to-many", "foreignKey": "member_id", "referenceKey": "id" }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "description": "场景9：多对多 - 学生选课（学生⟷课程，通过中间表 enrollment 关联）",
+  "tables": [
+    {
+      "name": "student",
+      "description": "学生",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "student_no", "type": "string", "length": 20, "required": true, "unique": true, "comment": "学号" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "姓名" },
+        { "name": "major", "type": "string", "length": 50, "required": false, "comment": "专业" },
+        { "name": "grade", "type": "number", "required": true, "comment": "年级" }
+      ]
+    },
+    {
+      "name": "course",
+      "description": "课程",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "course_code", "type": "string", "length": 20, "required": true, "unique": true, "comment": "课程编号" },
+        { "name": "name", "type": "string", "length": 100, "required": true, "comment": "课程名称" },
+        { "name": "credits", "type": "number", "required": true, "comment": "学分" },
+        { "name": "teacher", "type": "string", "length": 50, "required": false, "comment": "授课教师" },
+        { "name": "max_students", "type": "number", "required": false, "default": 100, "comment": "最大选课人数" }
+      ]
+    },
+    {
+      "name": "enrollment",
+      "description": "选课记录",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "student_id", "type": "number", "required": true, "comment": "学生ID" },
+        { "name": "course_id", "type": "number", "required": true, "comment": "课程ID" },
+        { "name": "semester", "type": "string", "length": 20, "required": true, "comment": "学期(如2025-春)" },
+        { "name": "score", "type": "float", "required": false, "comment": "成绩" },
+        { "name": "status", "type": "number", "required": true, "default": 1, "comment": "状态: 0退选 1在修 2已结课", "enum": [0, 1, 2] }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "enrollment", "to": "student", "type": "many-to-many", "foreignKey": "student_id", "referenceKey": "id" },
+    { "from": "enrollment", "to": "course", "type": "many-to-many", "foreignKey": "course_id", "referenceKey": "id" }
+  ]
+}

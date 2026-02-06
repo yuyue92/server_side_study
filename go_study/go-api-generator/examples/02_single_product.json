@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "description": "场景2：单表 - 商品目录（丰富字段类型演示）",
+  "tables": [
+    {
+      "name": "product",
+      "description": "商品",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "sku", "type": "string", "length": 32, "required": true, "unique": true, "comment": "商品编号" },
+        { "name": "name", "type": "string", "length": 100, "required": true, "comment": "商品名称" },
+        { "name": "description", "type": "text", "required": false, "comment": "商品描述" },
+        { "name": "price", "type": "float", "required": true, "comment": "价格" },
+        { "name": "stock", "type": "number", "required": true, "default": 0, "comment": "库存数量" },
+        { "name": "image_url", "type": "string", "length": 500, "format": "url", "required": false, "comment": "商品图片" },
+        { "name": "is_on_sale", "type": "boolean", "required": true, "default": true, "comment": "是否上架" },
+        { "name": "weight", "type": "float", "required": false, "comment": "重量(kg)" }
+      ]
+    }
+  ],
+  "relations": []
+}

@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "description": "场景1：单表 - 待办事项（最简单的CRUD）",
+  "tables": [
+    {
+      "name": "todo",
+      "description": "待办事项",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "title", "type": "string", "length": 200, "required": true, "comment": "标题" },
+        { "name": "done", "type": "boolean", "required": true, "default": false, "comment": "是否完成" },
+        { "name": "priority", "type": "number", "required": false, "default": 0, "comment": "优先级: 0低 1中 2高", "enum": [0, 1, 2] }
+      ]
+    }
+  ],
+  "relations": []
+}

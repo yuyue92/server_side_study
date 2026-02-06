@@ -1,0 +1,95 @@
+{
+  "version": "1.0",
+  "description": "场景13：综合复杂 - 医院预约挂号（科室→医生→排班→预约，一对一+一对多混合，6张表）",
+  "tables": [
+    {
+      "name": "department",
+      "description": "科室",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "unique": true, "comment": "科室名称" },
+        { "name": "floor", "type": "string", "length": 20, "required": false, "comment": "楼层位置" },
+        { "name": "description", "type": "text", "required": false, "comment": "科室介绍" },
+        { "name": "is_active", "type": "boolean", "required": true, "default": true, "comment": "是否开放" }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "医生",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "department_id", "type": "number", "required": true, "comment": "所属科室ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "姓名" },
+        { "name": "title", "type": "string", "length": 30, "required": true, "comment": "职称: 住院医师/主治医师/副主任医师/主任医师" },
+        { "name": "speciality", "type": "string", "length": 200, "required": false, "comment": "擅长领域" },
+        { "name": "photo", "type": "string", "length": 500, "format": "url", "required": false, "comment": "照片" },
+        { "name": "consultation_fee", "type": "float", "required": true, "comment": "挂号费(元)" }
+      ]
+    },
+    {
+      "name": "doctor_detail",
+      "description": "医生详细信息",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "doctor_id", "type": "number", "required": true, "unique": true, "comment": "医生ID" },
+        { "name": "education", "type": "string", "length": 100, "required": false, "comment": "学历" },
+        { "name": "experience_years", "type": "number", "required": false, "comment": "从业年限" },
+        { "name": "biography", "type": "text", "required": false, "comment": "个人简介" },
+        { "name": "certifications", "type": "text", "required": false, "comment": "资质证书(JSON)" }
+      ]
+    },
+    {
+      "name": "schedule",
+      "description": "排班",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "doctor_id", "type": "number", "required": true, "comment": "医生ID" },
+        { "name": "work_date", "type": "date", "required": true, "comment": "出诊日期" },
+        { "name": "time_slot", "type": "string", "length": 10, "required": true, "comment": "时段: morning/afternoon/evening" },
+        { "name": "max_patients", "type": "number", "required": true, "default": 30, "comment": "最大接诊数" },
+        { "name": "booked_count", "type": "number", "required": false, "default": 0, "comment": "已预约数" },
+        { "name": "is_available", "type": "boolean", "required": true, "default": true, "comment": "是否可预约" }
+      ]
+    },
+    {
+      "name": "patient",
+      "description": "患者",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "姓名" },
+        { "name": "id_card", "type": "string", "length": 18, "required": true, "unique": true, "comment": "身份证号" },
+        { "name": "phone", "type": "string", "length": 20, "required": true, "comment": "手机号" },
+        { "name": "gender", "type": "number", "required": true, "comment": "性别: 1男 2女", "enum": [1, 2] },
+        { "name": "birthday", "type": "date", "required": false, "comment": "出生日期" },
+        { "name": "medical_card_no", "type": "string", "length": 20, "required": false, "unique": true, "comment": "就诊卡号" }
+      ]
+    },
+    {
+      "name": "appointment",
+      "description": "预约挂号",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "appointment_no", "type": "string", "length": 32, "required": true, "unique": true, "comment": "预约单号" },
+        { "name": "patient_id", "type": "number", "required": true, "comment": "患者ID" },
+        { "name": "schedule_id", "type": "number", "required": true, "comment": "排班ID" },
+        { "name": "queue_number", "type": "number", "required": false, "comment": "排队序号" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0待就诊 1已就诊 2已取消 3已爽约", "enum": [0, 1, 2, 3] },
+        { "name": "symptom", "type": "text", "required": false, "comment": "症状描述" },
+        { "name": "cancel_reason", "type": "string", "length": 200, "required": false, "comment": "取消原因" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "doctor", "to": "department", "type": "one-to-many", "foreignKey": "department_id", "referenceKey": "id" },
+    { "from": "doctor_detail", "to": "doctor", "type": "one-to-one", "foreignKey": "doctor_id", "referenceKey": "id" },
+    { "from": "schedule", "to": "doctor", "type": "one-to-many", "foreignKey": "doctor_id", "referenceKey": "id" },
+    { "from": "appointment", "to": "patient", "type": "one-to-many", "foreignKey": "patient_id", "referenceKey": "id" },
+    { "from": "appointment", "to": "schedule", "type": "one-to-many", "foreignKey": "schedule_id", "referenceKey": "id" }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "description": "场景11：多对多 - 文章标签（文章⟷标签，加上分类的一对多混合）",
+  "tables": [
+    {
+      "name": "category",
+      "description": "分类",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "unique": true, "comment": "分类名称" },
+        { "name": "slug", "type": "string", "length": 50, "required": true, "unique": true, "comment": "URL标识" },
+        { "name": "parent_id", "type": "number", "required": false, "default": 0, "comment": "父分类ID" },
+        { "name": "sort_order", "type": "number", "required": false, "default": 0, "comment": "排序" }
+      ]
+    },
+    {
+      "name": "tag",
+      "description": "标签",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 30, "required": true, "unique": true, "comment": "标签名" },
+        { "name": "color", "type": "string", "length": 7, "required": false, "default": "#666666", "comment": "标签颜色(HEX)" }
+      ]
+    },
+    {
+      "name": "article",
+      "description": "文章",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "title", "type": "string", "length": 200, "required": true, "comment": "标题" },
+        { "name": "content", "type": "text", "required": true, "comment": "正文" },
+        { "name": "category_id", "type": "number", "required": true, "comment": "分类ID" },
+        { "name": "author", "type": "string", "length": 50, "required": true, "comment": "作者" },
+        { "name": "is_top", "type": "boolean", "required": false, "default": false, "comment": "是否置顶" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0草稿 1发布", "enum": [0, 1] }
+      ]
+    },
+    {
+      "name": "article_tag",
+      "description": "文章标签关联",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "article_id", "type": "number", "required": true, "comment": "文章ID" },
+        { "name": "tag_id", "type": "number", "required": true, "comment": "标签ID" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "article", "to": "category", "type": "one-to-many", "foreignKey": "category_id", "referenceKey": "id" },
+    { "from": "article_tag", "to": "article", "type": "many-to-many", "foreignKey": "article_id", "referenceKey": "id" },
+    { "from": "article_tag", "to": "tag", "type": "many-to-many", "foreignKey": "tag_id", "referenceKey": "id" }
+  ]
+}

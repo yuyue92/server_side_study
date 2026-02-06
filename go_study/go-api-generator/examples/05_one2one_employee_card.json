@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "description": "场景5：一对一 - 员工与工牌（每个员工对应唯一工牌）",
+  "tables": [
+    {
+      "name": "employee",
+      "description": "员工",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "emp_no", "type": "string", "length": 20, "required": true, "unique": true, "comment": "工号" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "姓名" },
+        { "name": "department", "type": "string", "length": 50, "required": false, "comment": "部门" },
+        { "name": "position", "type": "string", "length": 50, "required": false, "comment": "职位" },
+        { "name": "hire_date", "type": "date", "required": false, "comment": "入职日期" }
+      ]
+    },
+    {
+      "name": "id_card",
+      "description": "工牌",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "employee_id", "type": "number", "required": true, "unique": true, "comment": "员工ID" },
+        { "name": "card_no", "type": "string", "length": 32, "required": true, "unique": true, "comment": "工牌编号" },
+        { "name": "issue_date", "type": "date", "required": true, "comment": "发放日期" },
+        { "name": "expire_date", "type": "date", "required": false, "comment": "过期日期" },
+        { "name": "access_level", "type": "number", "required": true, "default": 1, "comment": "门禁等级: 1普通 2高级 3管理", "enum": [1, 2, 3] }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "id_card",
+      "to": "employee",
+      "type": "one-to-one",
+      "foreignKey": "employee_id",
+      "referenceKey": "id"
+    }
+  ]
+}

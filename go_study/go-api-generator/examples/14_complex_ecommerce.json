@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "description": "场景14：全关系综合 - 电商平台（一对一+一对多+多对多全覆盖，10张表）",
+  "tables": [
+    {
+      "name": "user",
+      "description": "用户",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "phone", "type": "string", "length": 20, "required": true, "unique": true, "comment": "手机号(登录账号)" },
+        { "name": "password", "type": "string", "length": 128, "required": true, "comment": "密码" },
+        { "name": "nickname", "type": "string", "length": 50, "required": false, "comment": "昵称" },
+        { "name": "avatar", "type": "string", "length": 500, "format": "url", "required": false, "comment": "头像" },
+        { "name": "status", "type": "number", "required": true, "default": 1, "comment": "状态: 0冻结 1正常", "enum": [0, 1] }
+      ]
+    },
+    {
+      "name": "user_wallet",
+      "description": "用户钱包",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "user_id", "type": "number", "required": true, "unique": true, "comment": "用户ID" },
+        { "name": "balance", "type": "float", "required": true, "default": 0, "comment": "余额" },
+        { "name": "points", "type": "number", "required": true, "default": 0, "comment": "积分" },
+        { "name": "total_spent", "type": "float", "required": true, "default": 0, "comment": "累计消费" }
+      ]
+    },
+    {
+      "name": "shipping_address",
+      "description": "收货地址",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "user_id", "type": "number", "required": true, "comment": "用户ID" },
+        { "name": "receiver_name", "type": "string", "length": 50, "required": true, "comment": "收货人" },
+        { "name": "receiver_phone", "type": "string", "length": 20, "required": true, "comment": "收货电话" },
+        { "name": "province", "type": "string", "length": 20, "required": true, "comment": "省" },
+        { "name": "city", "type": "string", "length": 20, "required": true, "comment": "市" },
+        { "name": "district", "type": "string", "length": 20, "required": true, "comment": "区" },
+        { "name": "detail", "type": "string", "length": 200, "required": true, "comment": "详细地址" },
+        { "name": "is_default", "type": "boolean", "required": false, "default": false, "comment": "是否默认" }
+      ]
+    },
+    {
+      "name": "brand",
+      "description": "品牌",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "unique": true, "comment": "品牌名称" },
+        { "name": "logo", "type": "string", "length": 500, "format": "url", "required": false, "comment": "品牌Logo" },
+        { "name": "country", "type": "string", "length": 30, "required": false, "comment": "所属国家" },
+        { "name": "description", "type": "text", "required": false, "comment": "品牌介绍" }
+      ]
+    },
+    {
+      "name": "category",
+      "description": "商品分类",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "分类名称" },
+        { "name": "parent_id", "type": "number", "required": false, "default": 0, "comment": "父分类ID(三级分类)" },
+        { "name": "icon", "type": "string", "length": 500, "required": false, "comment": "图标" },
+        { "name": "sort_order", "type": "number", "required": false, "default": 0, "comment": "排序" }
+      ]
+    },
+    {
+      "name": "product",
+      "description": "商品",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 200, "required": true, "comment": "商品名称" },
+        { "name": "brand_id", "type": "number", "required": true, "comment": "品牌ID" },
+        { "name": "category_id", "type": "number", "required": true, "comment": "分类ID" },
+        { "name": "price", "type": "float", "required": true, "comment": "售价" },
+        { "name": "original_price", "type": "float", "required": false, "comment": "原价(划线价)" },
+        { "name": "stock", "type": "number", "required": true, "default": 0, "comment": "库存" },
+        { "name": "sales_count", "type": "number", "required": false, "default": 0, "comment": "销量" },
+        { "name": "main_image", "type": "string", "length": 500, "format": "url", "required": true, "comment": "主图" },
+        { "name": "description", "type": "text", "required": false, "comment": "商品详情(HTML)" },
+        { "name": "is_on_sale", "type": "boolean", "required": true, "default": true, "comment": "是否上架" }
+      ]
+    },
+    {
+      "name": "order",
+      "description": "订单",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "order_no", "type": "string", "length": 32, "required": true, "unique": true, "comment": "订单编号" },
+        { "name": "user_id", "type": "number", "required": true, "comment": "买家ID" },
+        { "name": "total_amount", "type": "float", "required": true, "comment": "商品总额" },
+        { "name": "shipping_fee", "type": "float", "required": true, "default": 0, "comment": "运费" },
+        { "name": "pay_amount", "type": "float", "required": true, "comment": "实付金额" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0待付款 1待发货 2待收货 3已完成 4已取消 5退款中", "enum": [0,1,2,3,4,5] },
+        { "name": "receiver_name", "type": "string", "length": 50, "required": true, "comment": "收货人" },
+        { "name": "receiver_phone", "type": "string", "length": 20, "required": true, "comment": "收货电话" },
+        { "name": "receiver_address", "type": "string", "length": 300, "required": true, "comment": "收货地址" },
+        { "name": "remark", "type": "text", "required": false, "comment": "买家备注" },
+        { "name": "paid_at", "type": "date", "required": false, "comment": "支付时间" },
+        { "name": "shipped_at", "type": "date", "required": false, "comment": "发货时间" }
+      ]
+    },
+    {
+      "name": "order_item",
+      "description": "订单商品明细",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "order_id", "type": "number", "required": true, "comment": "订单ID" },
+        { "name": "product_id", "type": "number", "required": true, "comment": "商品ID" },
+        { "name": "product_name", "type": "string", "length": 200, "required": true, "comment": "商品名称(快照)" },
+        { "name": "product_image", "type": "string", "length": 500, "required": false, "comment": "商品图片(快照)" },
+        { "name": "price", "type": "float", "required": true, "comment": "购买单价(快照)" },
+        { "name": "quantity", "type": "number", "required": true, "comment": "购买数量" },
+        { "name": "subtotal", "type": "float", "required": true, "comment": "小计金额" }
+      ]
+    },
+    {
+      "name": "product_collection",
+      "description": "商品收藏",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "user_id", "type": "number", "required": true, "comment": "用户ID" },
+        { "name": "product_id", "type": "number", "required": true, "comment": "商品ID" }
+      ]
+    },
+    {
+      "name": "review",
+      "description": "商品评价",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "order_item_id", "type": "number", "required": true, "unique": true, "comment": "订单明细ID(一个明细只评一次)" },
+        { "name": "user_id", "type": "number", "required": true, "comment": "评价人ID" },
+        { "name": "product_id", "type": "number", "required": true, "comment": "商品ID" },
+        { "name": "rating", "type": "number", "required": true, "comment": "评分: 1-5", "enum": [1,2,3,4,5] },
+        { "name": "content", "type": "text", "required": false, "comment": "评价内容" },
+        { "name": "images", "type": "text", "required": false, "comment": "评价图片(JSON数组)" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "user_wallet", "to": "user", "type": "one-to-one", "foreignKey": "user_id", "referenceKey": "id" },
+    { "from": "shipping_address", "to": "user", "type": "one-to-many", "foreignKey": "user_id", "referenceKey": "id" },
+    { "from": "product", "to": "brand", "type": "one-to-many", "foreignKey": "brand_id", "referenceKey": "id" },
+    { "from": "product", "to": "category", "type": "one-to-many", "foreignKey": "category_id", "referenceKey": "id" },
+    { "from": "order", "to": "user", "type": "one-to-many", "foreignKey": "user_id", "referenceKey": "id" },
+    { "from": "order_item", "to": "order", "type": "one-to-many", "foreignKey": "order_id", "referenceKey": "id" },
+    { "from": "order_item", "to": "product", "type": "one-to-many", "foreignKey": "product_id", "referenceKey": "id" },
+    { "from": "product_collection", "to": "user", "type": "many-to-many", "foreignKey": "user_id", "referenceKey": "id" },
+    { "from": "product_collection", "to": "product", "type": "many-to-many", "foreignKey": "product_id", "referenceKey": "id" },
+    { "from": "review", "to": "order_item", "type": "one-to-one", "foreignKey": "order_item_id", "referenceKey": "id" },
+    { "from": "review", "to": "user", "type": "one-to-many", "foreignKey": "user_id", "referenceKey": "id" },
+    { "from": "review", "to": "product", "type": "one-to-many", "foreignKey": "product_id", "referenceKey": "id" }
+  ]
+}

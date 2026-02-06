@@ -1,0 +1,214 @@
+{
+  "version": "1.0",
+  "tables": [
+    {
+      "name": "user",
+      "description": "用户表",
+      "primaryKey": "id",
+      "fields": [
+        {
+          "name": "id",
+          "type": "number",
+          "length": 20,
+          "required": true,
+          "autoIncrement": true,
+          "comment": "主键ID"
+        },
+        {
+          "name": "uuid",
+          "type": "string",
+          "length": 36,
+          "format": "uuid",
+          "required": true,
+          "unique": true,
+          "comment": "用户UUID"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "length": 50,
+          "required": true,
+          "unique": true,
+          "comment": "用户名"
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "length": 100,
+          "format": "email",
+          "required": true,
+          "unique": true,
+          "comment": "邮箱"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "length": 128,
+          "required": true,
+          "comment": "密码(加密存储)"
+        },
+        {
+          "name": "nickname",
+          "type": "string",
+          "length": 50,
+          "required": false,
+          "comment": "昵称"
+        },
+        {
+          "name": "avatar",
+          "type": "string",
+          "length": 255,
+          "format": "url",
+          "required": false,
+          "comment": "头像URL"
+        },
+        {
+          "name": "status",
+          "type": "number",
+          "required": true,
+          "default": 1,
+          "comment": "状态: 0-禁用 1-启用",
+          "enum": [0, 1]
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "required": false,
+          "comment": "个人简介"
+        }
+      ]
+    },
+    {
+      "name": "article",
+      "description": "文章表",
+      "primaryKey": "id",
+      "fields": [
+        {
+          "name": "id",
+          "type": "number",
+          "required": true,
+          "autoIncrement": true,
+          "comment": "主键ID"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "length": 200,
+          "required": true,
+          "comment": "标题"
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "comment": "内容"
+        },
+        {
+          "name": "summary",
+          "type": "string",
+          "length": 500,
+          "required": false,
+          "comment": "摘要"
+        },
+        {
+          "name": "cover_image",
+          "type": "string",
+          "length": 255,
+          "format": "url",
+          "required": false,
+          "comment": "封面图URL"
+        },
+        {
+          "name": "user_id",
+          "type": "number",
+          "required": true,
+          "comment": "作者ID"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "length": 50,
+          "required": false,
+          "comment": "分类"
+        },
+        {
+          "name": "status",
+          "type": "number",
+          "required": true,
+          "default": 0,
+          "comment": "状态: 0-草稿 1-已发布 2-已归档",
+          "enum": [0, 1, 2]
+        },
+        {
+          "name": "view_count",
+          "type": "number",
+          "required": false,
+          "default": 0,
+          "comment": "浏览量"
+        }
+      ]
+    },
+    {
+      "name": "comment",
+      "description": "评论表",
+      "primaryKey": "id",
+      "fields": [
+        {
+          "name": "id",
+          "type": "number",
+          "required": true,
+          "autoIncrement": true,
+          "comment": "主键ID"
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "comment": "评论内容"
+        },
+        {
+          "name": "user_id",
+          "type": "number",
+          "required": true,
+          "comment": "评论者ID"
+        },
+        {
+          "name": "article_id",
+          "type": "number",
+          "required": true,
+          "comment": "文章ID"
+        },
+        {
+          "name": "parent_id",
+          "type": "number",
+          "required": false,
+          "default": 0,
+          "comment": "父评论ID(用于回复)"
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "article",
+      "to": "user",
+      "type": "one-to-many",
+      "foreignKey": "user_id",
+      "referenceKey": "id"
+    },
+    {
+      "from": "comment",
+      "to": "user",
+      "type": "one-to-many",
+      "foreignKey": "user_id",
+      "referenceKey": "id"
+    },
+    {
+      "from": "comment",
+      "to": "article",
+      "type": "one-to-many",
+      "foreignKey": "article_id",
+      "referenceKey": "id"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "description": "场景6：一对多 - 博客系统（用户→文章→评论，经典三层嵌套）",
+  "tables": [
+    {
+      "name": "author",
+      "description": "作者",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "笔名" },
+        { "name": "email", "type": "string", "length": 100, "format": "email", "required": true, "unique": true, "comment": "邮箱" },
+        { "name": "avatar", "type": "string", "length": 500, "format": "url", "required": false, "comment": "头像" }
+      ]
+    },
+    {
+      "name": "post",
+      "description": "文章",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "author_id", "type": "number", "required": true, "comment": "作者ID" },
+        { "name": "title", "type": "string", "length": 200, "required": true, "comment": "标题" },
+        { "name": "slug", "type": "string", "length": 200, "required": true, "unique": true, "comment": "URL别名" },
+        { "name": "content", "type": "text", "required": true, "comment": "正文(Markdown)" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0草稿 1已发布", "enum": [0, 1] },
+        { "name": "view_count", "type": "number", "required": false, "default": 0, "comment": "阅读量" },
+        { "name": "published_at", "type": "date", "required": false, "comment": "发布时间" }
+      ]
+    },
+    {
+      "name": "comment",
+      "description": "评论",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "post_id", "type": "number", "required": true, "comment": "文章ID" },
+        { "name": "author_name", "type": "string", "length": 50, "required": true, "comment": "评论者昵称" },
+        { "name": "author_email", "type": "string", "length": 100, "format": "email", "required": false, "comment": "评论者邮箱" },
+        { "name": "content", "type": "text", "required": true, "comment": "评论内容" },
+        { "name": "parent_id", "type": "number", "required": false, "default": 0, "comment": "父评论ID(回复)" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "post", "to": "author", "type": "one-to-many", "foreignKey": "author_id", "referenceKey": "id" },
+    { "from": "comment", "to": "post", "type": "one-to-many", "foreignKey": "post_id", "referenceKey": "id" }
+  ]
+}

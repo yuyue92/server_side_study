@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "description": "场景7：一对多 - 网店订单（客户→订单→订单明细，典型电商结构）",
+  "tables": [
+    {
+      "name": "customer",
+      "description": "客户",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "name", "type": "string", "length": 50, "required": true, "comment": "客户姓名" },
+        { "name": "phone", "type": "string", "length": 20, "required": true, "unique": true, "comment": "手机号" },
+        { "name": "email", "type": "string", "length": 100, "format": "email", "required": false, "comment": "邮箱" },
+        { "name": "level", "type": "number", "required": true, "default": 1, "comment": "会员等级: 1普通 2银卡 3金卡 4钻石", "enum": [1, 2, 3, 4] }
+      ]
+    },
+    {
+      "name": "order",
+      "description": "订单",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "order_no", "type": "string", "length": 32, "required": true, "unique": true, "comment": "订单编号" },
+        { "name": "customer_id", "type": "number", "required": true, "comment": "客户ID" },
+        { "name": "total_amount", "type": "float", "required": true, "comment": "订单总额" },
+        { "name": "status", "type": "number", "required": true, "default": 0, "comment": "状态: 0待付款 1已付款 2已发货 3已完成 4已取消", "enum": [0, 1, 2, 3, 4] },
+        { "name": "shipping_address", "type": "string", "length": 300, "required": true, "comment": "收货地址" },
+        { "name": "remark", "type": "text", "required": false, "comment": "订单备注" }
+      ]
+    },
+    {
+      "name": "order_item",
+      "description": "订单明细",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "order_id", "type": "number", "required": true, "comment": "订单ID" },
+        { "name": "product_name", "type": "string", "length": 100, "required": true, "comment": "商品名称" },
+        { "name": "sku", "type": "string", "length": 32, "required": true, "comment": "商品编号" },
+        { "name": "price", "type": "float", "required": true, "comment": "单价" },
+        { "name": "quantity", "type": "number", "required": true, "comment": "数量" },
+        { "name": "subtotal", "type": "float", "required": true, "comment": "小计" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "order", "to": "customer", "type": "one-to-many", "foreignKey": "customer_id", "referenceKey": "id" },
+    { "from": "order_item", "to": "order", "type": "one-to-many", "foreignKey": "order_id", "referenceKey": "id" }
+  ]
+}

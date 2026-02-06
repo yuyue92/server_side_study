@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "description": "场景3：单表 - 系统配置（键值对存储，适用于系统设置页）",
+  "tables": [
+    {
+      "name": "config",
+      "description": "系统配置",
+      "primaryKey": "id",
+      "fields": [
+        { "name": "id", "type": "number", "required": true, "autoIncrement": true, "comment": "主键ID" },
+        { "name": "config_key", "type": "string", "length": 100, "required": true, "unique": true, "comment": "配置键" },
+        { "name": "config_value", "type": "text", "required": false, "comment": "配置值" },
+        { "name": "group_name", "type": "string", "length": 50, "required": false, "default": "default", "comment": "配置分组" },
+        { "name": "remark", "type": "string", "length": 200, "required": false, "comment": "说明" }
+      ]
+    }
+  ],
+  "relations": []
+}
